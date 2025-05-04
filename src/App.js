@@ -36,7 +36,7 @@ export default function App() {
     }
 
     if (freeText.toLowerCase().includes("בהשראת") || freeText.toLowerCase().includes("דומה ל") || freeText.toLowerCase().includes("מזכיר")) {
-      msg += "\n⚠️ זוהתה התייחסות ליצירה קיימת. שימוש בהשראה עלול להיחשב להעתקה אם יש דמיון מהותי. ודא שהקמפיין שונה מהותית או התייעץ עם עו"ד לזכויות יוצרים.";
+      msg += "\n⚠️ זוהתה התייחסות ליצירה קיימת. שימוש בהשראה עלול להיחשב להעתקה אם יש דמיון מהותי. ודא   שהקמפיין שונה מהותית או התייעץ עם עורך דין לזכויות יוצרים.";
     }
 
     if (freeText.toLowerCase().includes("לוגו") || freeText.toLowerCase().includes("מותג") || freeText.toLowerCase().includes("סימן מסחר") || freeText.toLowerCase().includes("שם מסחרי")) {
