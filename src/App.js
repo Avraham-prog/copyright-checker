@@ -66,7 +66,10 @@ export default function App() {
     <div className="min-h-screen bg-gray-100 py-10 px-4">
       <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-md p-8">
         <h1 className="text-2xl font-bold mb-6 text-center text-gray-800">בודק זכויות יוצרים</h1>
-
+{/* בדיקת קבצי סאונד */}
+<div className="mt-10">
+  <AudioLinkChecker />
+</div>
         {step < 99 && (
           <div className="space-y-6">
             {step === 1 && (
