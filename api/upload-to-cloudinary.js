@@ -12,24 +12,23 @@ export default function AudioLinkChecker() {
     setResult(null);
 
     try {
-      // שלב ביניים - שליחת הלינק לשרת שמעלה את האודיו ל-Cloudinary ומחזיר קישור ישיר
-      const uploadRes = await fetch('/api/upload-to-cloudinary', {
+      const res = await fetch('/api/upload-to-cloudinary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
       });
 
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) throw new Error(uploadData.error || 'Failed to upload audio');
+      const { cloudinaryUrl } = await res.json();
+      if (!res.ok || !cloudinaryUrl) throw new Error('Failed to upload');
 
-      // שליחת הבדיקה ל-ACRCloud עם הקובץ המועלה
-      const res = await fetch('/api/analyze-audio', {
+      const acrRes = await fetch('/api/analyze-audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: uploadData.secure_url })
+        body: JSON.stringify({ url: cloudinaryUrl })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+
+      const data = await acrRes.json();
+      if (!acrRes.ok) throw new Error(data.error || 'Something went wrong');
       setResult(data);
     } catch (err) {
       setError(err.message);
@@ -40,23 +39,24 @@ export default function AudioLinkChecker() {
 
   return (
     <div className="p-4 border rounded-xl shadow-md bg-white max-w-xl mx-auto">
-      <h2 className="text-xl font-bold mb-4">בדיקת זכויות שיר / סאונד</h2>
+      <h2 className="text-xl font-bold mb-4">בדיקת לינק לקובץ סאונד</h2>
       <input
         type="text"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
         className="w-full p-2 border rounded mb-3"
-        placeholder="הדבק לינק ליוטיוב, סאונדקלאוד או קובץ אודיו ישיר..."
+        placeholder="הדבק לינק לקובץ mp3 / wav / soundcloud / יוטיוב..."
       />
       <button
         onClick={handleCheck}
         disabled={loading || !url}
         className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
       >
-        בדוק זכויות אודיו
+        בדיקה
       </button>
 
-      {loading && <p className="mt-4 text-gray-500">מעלה ובודק...</p>}
+      {loading && <p className="mt-4 text-gray-500">בודק...</p>}
+
       {error && <p className="mt-4 text-red-500">שגיאה: {error}</p>}
 
       {result && (
