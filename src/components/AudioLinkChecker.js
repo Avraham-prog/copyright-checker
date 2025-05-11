@@ -1,4 +1,3 @@
-// 📁 src/components/AudioLinkChecker.js
 import React, { useState } from 'react';
 
 export default function AudioLinkChecker() {
