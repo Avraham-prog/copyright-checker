@@ -1,69 +1,86 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 export default function AudioLinkChecker() {
-  const [audioUrl, setAudioUrl] = useState("");
-  const [result, setResult] = useState(null);
+  const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleAnalyze = async () => {
-    if (!audioUrl) {
-      setError("יש להזין קישור לקובץ אודיו.");
-      return;
-    }
-
+  const handleCheck = async () => {
     setLoading(true);
     setError(null);
     setResult(null);
 
     try {
-      const res = await fetch("/api/analyze-audio", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ audioUrl })
+      const res = await fetch('/api/upload-to-cloudinary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
       });
 
-      const data = await res.json();
+      const { cloudinaryUrl } = await res.json();
+      if (!res.ok || !cloudinaryUrl) throw new Error('Failed to upload');
 
-      if (res.ok) {
-        setResult(data);
-      } else {
-        setError(data.error || "קרתה שגיאה בזמן הבדיקה.");
-      }
+      const acrRes = await fetch('/api/analyze-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: cloudinaryUrl })
+      });
+
+      const data = await acrRes.json();
+      if (!acrRes.ok) throw new Error(data.error || 'Something went wrong');
+      setResult(data);
     } catch (err) {
-      setError("שגיאת רשת או שרת.");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white border mt-8 rounded-lg shadow-md p-6">
-      <h2 className="text-lg font-semibold mb-4">בדיקת זכויות שיר / סאונד</h2>
+    <div className="p-4 border rounded-xl shadow-md bg-white max-w-xl mx-auto">
+      <h2 className="text-xl font-bold mb-4">בדיקת לינק לקובץ סאונד</h2>
       <input
         type="text"
-        placeholder="הדבק כאן קישור לקובץ סאונד או לינק ל-MP3"
-        className="w-full border p-2 rounded mb-4"
-        value={audioUrl}
-        onChange={(e) => setAudioUrl(e.target.value)}
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+        className="w-full p-2 border rounded mb-3"
+        placeholder="הדבק לינק לקובץ mp3 / wav / soundcloud / יוטיוב..."
       />
       <button
-        onClick={handleAnalyze}
-        disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+        onClick={handleCheck}
+        disabled={loading || !url}
+        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
       >
-        {loading ? "בודק..." : "בדוק זכויות אודיו"}
+        בדיקה
       </button>
 
-      {error && <p className="text-red-600 mt-4">⚠️ {error}</p>}
+      {loading && <p className="mt-4 text-gray-500">בודק...</p>}
+
+      {error && <p className="mt-4 text-red-500">שגיאה: {error}</p>}
 
       {result && (
-        <div className="mt-4 bg-gray-50 border p-4 rounded text-sm">
-          <pre>{JSON.stringify(result, null, 2)}</pre>
+        <div className="mt-4 bg-gray-100 p-3 rounded">
+          <h3 className="font-semibold text-lg mb-2">תוצאה:</h3>
+          {result.metadata?.music?.length ? (
+            <div>
+              <p><strong>שיר:</strong> {result.metadata.music[0].title}</p>
+              <p><strong>אמן:</strong> {result.metadata.music[0].artists?.map(a => a.name).join(', ')}</p>
+              {result.metadata.music[0].external_metadata?.youtube && (
+                <a
+                  href={`https://www.youtube.com/watch?v=${result.metadata.music[0].external_metadata.youtube.video_id}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="text-blue-700 underline"
+                >
+                  לינק ליוטיוב
+                </a>
+              )}
+            </div>
+          ) : (
+            <p>לא זוהה שיר מוכר. ייתכן שזה קובץ מקורי או שלא ניתן לזהות אותו אוטומטית.</p>
+          )}
         </div>
       )}
     </div>
   );
-} 
+}
