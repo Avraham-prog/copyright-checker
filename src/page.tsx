@@ -15,7 +15,7 @@ export default function App() {
     },
   ]);
   const [input, setInput] = useState("");
-  const [upload, setUpload] = useState<File | null>(null);
+ const [upload, setUpload] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
   const handleSend = async () => {
