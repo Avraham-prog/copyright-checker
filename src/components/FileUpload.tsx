@@ -2,29 +2,38 @@ import React, { useState } from "react";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 
-export default function FileUpload({ onUpload }) {
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [cloudinaryUrl, setCloudinaryUrl] = useState("");
+interface FileUploadProps {
+  onUpload: (url: string) => void;
+}
+
+export default function FileUpload({ onUpload }: FileUploadProps) {
+  const [file, setFile] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [cloudinaryUrl, setCloudinaryUrl] = useState<string>("");
 
   const handleUpload = async () => {
     if (!file) return;
     setLoading(true);
 
-    const res = await fetch("/api/upload-to-cloudinary", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: file })
-    });
+    try {
+      const res = await fetch("/api/upload-to-cloudinary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: file })
+      });
 
-    const data = await res.json();
-    setLoading(false);
+      const data = await res.json();
+      setLoading(false);
 
-    if (res.ok) {
-      setCloudinaryUrl(data.cloudinaryUrl);
-      onUpload(data.cloudinaryUrl);
-    } else {
-      alert("Upload failed: " + (data.error || "unknown error"));
+      if (res.ok && data.cloudinaryUrl) {
+        setCloudinaryUrl(data.cloudinaryUrl);
+        onUpload(data.cloudinaryUrl);
+      } else {
+        alert("Upload failed: " + (data.error || "unknown error"));
+      }
+    } catch (err) {
+      setLoading(false);
+      alert("שגיאה במהלך ההעלאה");
     }
   };
 
@@ -32,7 +41,8 @@ export default function FileUpload({ onUpload }) {
     <div className="space-y-4 mt-6">
       <Input
         type="text"
-        placeholder="הדבק קישור לקובץ (למשל קובץ mp3, jpg או png)"
+        placeholder="הדבק קישור לקובץ (למשל mp3, jpg או png)"
+        value={file}
         onChange={(e) => setFile(e.target.value)}
       />
       <Button onClick={handleUpload} disabled={loading || !file}>
