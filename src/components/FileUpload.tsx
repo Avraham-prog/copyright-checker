@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Input } from "./components/ui/input";
-import { Button } from "./components/ui/button";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 
 export default function FileUpload({ onUpload }) {
   const [file, setFile] = useState(null);
