@@ -1,32 +1,47 @@
+import formidable from 'formidable';
+import fs from 'fs';
+import { OpenAI } from 'openai';
+
+export const config = {
+  api: {
+    bodyParser: false
+  }
+};
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { url } = req.body;
-  if (!url) {
-    return res.status(400).json({ error: 'Missing audio URL' });
-  }
+  const form = new formidable.IncomingForm({ multiples: false });
 
-  try {
-    const response = await fetch(process.env.LEGAL_ANALYSIS_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.LEGAL_ANALYSIS_API_KEY || ''}`
-      },
-      body: JSON.stringify({ url })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || 'Legal analysis failed');
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      console.error('Formidable error:', err);
+      return res.status(500).json({ error: 'Failed to parse form' });
     }
 
-    return res.status(200).json(data);
-  } catch (err) {
-    console.error('Legal analysis error:', err);
-    return res.status(500).json({ error: 'Failed to perform legal analysis' });
-  }
+    const prompt = fields.prompt;
+    const file = files.file;
+
+    if (!prompt && !file) {
+      return res.status(400).json({ error: 'Missing prompt or file' });
+    }
+
+    // כאן תוכל להעלות את הקובץ ל־Cloudinary או לקרוא אותו ל־Buffer
+    // ואח״כ לשלוח את ה־prompt ל־OpenAI
+
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'system', content: 'אתה עורך דין מומחה בזכויות יוצרים' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.4
+    });
+
+    return res.status(200).json({ summary: completion.choices[0].message.content });
+  });
 }
