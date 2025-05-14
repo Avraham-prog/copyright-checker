@@ -8,47 +8,57 @@ interface Props {
 
 export default function FileUpload({ onUpload }: Props) {
   const [file, setFile] = useState<File | null>(null);
+  const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [cloudinaryUrl, setCloudinaryUrl] = useState("");
 
-  const handleUpload = async () => {
-    if (!file) return;
+  const uploadToCloudinary = async (fileOrUrl: File | string) => {
     setLoading(true);
+    let data: FormData | string;
+    let options: RequestInit;
 
-    const data = new FormData();
-    data.append("file", file);
-    data.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "");
+    if (typeof fileOrUrl === "string") {
+      data = JSON.stringify({
+        file: fileOrUrl,
+        upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+      });
+      options = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: data
+      };
+    } else {
+      data = new FormData();
+      data.append("file", fileOrUrl);
+      data.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "");
+      options = {
+        method: "POST",
+        body: data
+      };
+    }
 
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`, {
-      method: "POST",
-      body: data,
-    });
-
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`, options);
     const json = await res.json();
     setLoading(false);
 
     if (json.secure_url) {
-      setCloudinaryUrl(json.secure_url);
       onUpload(json.secure_url);
     } else {
-      alert("❌ שגיאה בהעלאה ל-Cloudinary");
+      alert("❌ שגיאה בהעלאה ל-Cloudinary: " + (json.error?.message || "שגיאה לא ידועה"));
     }
   };
 
   return (
     <div className="space-y-4 mt-4">
       <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-      <Button onClick={handleUpload} disabled={loading || !file}>
+      <Input
+        type="text"
+        placeholder="או הדבק כאן לינק ישיר לקובץ (MP3, YouTube וכו')"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+      />
+      <Button onClick={() => uploadToCloudinary(file || url)} disabled={loading || (!file && !url)}>
         {loading ? "מעלה..." : "העלה ל-Cloudinary"}
       </Button>
-      {cloudinaryUrl && (
-        <div className="text-sm text-green-700 mt-2">
-          ✅ קובץ הועלה בהצלחה:
-          <a href={cloudinaryUrl} target="_blank" rel="noopener noreferrer" className="underline ml-1">
-            צפייה בקובץ
-          </a>
-        </div>
-      )}
     </div>
   );
 }
