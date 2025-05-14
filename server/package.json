@@ -1,0 +1,16 @@
+{
+  "name": "legal-assistant-api",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "formidable": "^3.7.0",
+    "openai": "^4.27.0",
+    "cors": "^2.8.5"
+  }
+}
