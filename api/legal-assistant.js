@@ -1,47 +1,56 @@
-import formidable from 'formidable';
-import fs from 'fs';
-import { OpenAI } from 'openai';
+// /pages/api/legal-assistant.js
+
+import formidable from "formidable";
+import fs from "fs";
+import path from "path";
+import { Configuration, OpenAIApi } from "openai";
 
 export const config = {
   api: {
-    bodyParser: false
-  }
+    bodyParser: false,
+  },
 };
 
+const openai = new OpenAIApi(
+  new Configuration({ apiKey: process.env.OPENAI_API_KEY })
+);
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const form = new formidable.IncomingForm({ multiples: false });
+  const form = new formidable.IncomingForm();
+  form.uploadDir = path.join(process.cwd(), "/tmp");
+  form.keepExtensions = true;
 
   form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error('Formidable error:', err);
-      return res.status(500).json({ error: 'Failed to parse form' });
+    const prompt = fields.prompt?.[0] || "";
+    const fileUrl = fields.file?.[0] || null;
+
+    let systemPrompt = "אתה עורך דין מומחה בדיני זכויות יוצרים. נתח משפטית את המידע שהוזן על שימוש בקובץ לצרכים מסחריים.";
+
+    if (!prompt && !fileUrl) {
+      return res.status(400).json({ error: "Missing prompt or file" });
     }
 
-    const prompt = fields.prompt;
-    const file = files.file;
+    try {
+      const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `השאלה: ${prompt}${fileUrl ? `\nהקובץ שצורף: ${fileUrl}` : ""}` },
+      ];
 
-    if (!prompt && !file) {
-      return res.status(400).json({ error: 'Missing prompt or file' });
+      const completion = await openai.createChatCompletion({
+        model: "gpt-4",
+        messages,
+        temperature: 0.4,
+      });
+
+      const summary = completion.data.choices?.[0]?.message?.content || "";
+      res.status(200).json({ summary });
+    } catch (e) {
+      console.error("Legal analysis error:", e);
+      res.status(500).json({ error: "Failed to generate legal analysis" });
     }
-
-    // כאן תוכל להעלות את הקובץ ל־Cloudinary או לקרוא אותו ל־Buffer
-    // ואח״כ לשלוח את ה־prompt ל־OpenAI
-
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-    const completion = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        { role: 'system', content: 'אתה עורך דין מומחה בזכויות יוצרים' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.4
-    });
-
-    return res.status(200).json({ summary: completion.choices[0].message.content });
   });
 }
