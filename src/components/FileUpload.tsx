@@ -10,53 +10,60 @@ export default function FileUpload({ onUpload }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
   const uploadToCloudinary = async (fileOrUrl: File | string) => {
     setLoading(true);
-    setError(null);
+    setError("");
 
     try {
-      const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-      const preset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-
-      if (!cloudName || !preset) {
-        setError("הגדרות Cloudinary חסרות. ודא שהמשתנים קיימים ב־ENV שלך");
-        setLoading(false);
-        return;
+      if (!cloudName || !uploadPreset) {
+        throw new Error("הגדרות Cloudinary חסרות. ודא שהמשתנים קיימים ב־ENV שלך");
       }
 
       let data: FormData | string;
       let options: RequestInit;
 
       if (typeof fileOrUrl === "string") {
-        data = JSON.stringify({ file: fileOrUrl, upload_preset: preset });
+        data = JSON.stringify({
+          file: fileOrUrl,
+          upload_preset: uploadPreset,
+        });
         options = {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: data
+          body: data,
         };
       } else {
         data = new FormData();
         data.append("file", fileOrUrl);
-        data.append("upload_preset", preset);
+        data.append("upload_preset", uploadPreset);
         options = {
           method: "POST",
-          body: data
+          body: data,
         };
       }
 
-      const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, options);
+      const res = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
+        options
+      );
       const json = await res.json();
 
-      if (json.secure_url) {
-        onUpload(json.secure_url);
-      } else {
-        const msg = json.error?.message || "שגיאה כללית בהעלאה ל-Cloudinary";
-        setError(`❌ שגיאה: ${msg}`);
+      if (!res.ok || !json.secure_url) {
+        console.error("Cloudinary error:", json);
+        throw new Error(
+          json?.error?.message || "העלאה ל־Cloudinary נכשלה מסיבה לא ידועה"
+        );
       }
+
+      onUpload(json.secure_url);
     } catch (err: any) {
-      setError("שגיאת רשת: לא ניתן היה ליצור קשר עם Cloudinary");
+      setError(err.message || "אירעה שגיאה בהעלאה");
+      console.error("Upload Error:", err);
     } finally {
       setLoading(false);
     }
@@ -64,14 +71,20 @@ export default function FileUpload({ onUpload }: Props) {
 
   return (
     <div className="space-y-4 mt-4">
-      <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+      <Input
+        type="file"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+      />
       <Input
         type="text"
         placeholder="או הדבק כאן לינק ישיר לקובץ (MP3, YouTube וכו')"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
       />
-      <Button onClick={() => uploadToCloudinary(file || url)} disabled={loading || (!file && !url)}>
+      <Button
+        onClick={() => uploadToCloudinary(file || url)}
+        disabled={loading || (!file && !url)}
+      >
         {loading ? "מעלה..." : "העלה ל-Cloudinary"}
       </Button>
       {error && <p className="text-red-600 text-sm">{error}</p>}
