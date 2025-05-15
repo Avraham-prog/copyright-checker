@@ -1,0 +1,11 @@
+/* styles/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* תוכל להוסיף כאן עיצובים גלובליים נוספים אם תרצה */
+
+body {
+  @apply bg-gray-50 text-gray-900;
+  font-family: sans-serif;
+}
