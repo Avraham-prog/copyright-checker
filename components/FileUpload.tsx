@@ -12,8 +12,8 @@ export default function FileUpload({ onUpload }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const cloudName = process.env.REACT_APP_CLOUDINARY_CLOUD_NAME;
-  const uploadPreset = process.env.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
   const uploadToCloudinary = async (fileOrUrl: File | string) => {
     setLoading(true);
