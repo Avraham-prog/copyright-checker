@@ -1,0 +1,19 @@
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+  images: {
+    domains: ["res.cloudinary.com"], // אם תשתמש בקומפוננטת <Image />
+  },
+  experimental: {
+    serverActions: true,
+  },
+  env: {
+    CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+    CLOUDINARY_UPLOAD_PRESET: process.env.CLOUDINARY_UPLOAD_PRESET,
+    LEGAL_ANALYSIS_API_URL: process.env.LEGAL_ANALYSIS_API_URL,
+    LEGAL_ANALYSIS_API_KEY: process.env.LEGAL_ANALYSIS_API_KEY
+  }
+};
+
+module.exports = nextConfig;
