@@ -27,11 +27,11 @@ export default function App() {
     setLoading(true);
 
     try {
-      const res = await fetch(process.env.REACT_APP_LEGAL_ANALYSIS_API_URL!, {
+      const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL!, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.REACT_APP_LEGAL_ANALYSIS_API_KEY}`,
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_KEY}`,
         },
         body: JSON.stringify({ url: upload || input }),
       });
