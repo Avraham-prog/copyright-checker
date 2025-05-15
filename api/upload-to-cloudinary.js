@@ -10,12 +10,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const cloudinaryRes = await fetch(`https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/auto/upload`, {
+    const cloudinaryRes = await fetch(`https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         file: url,
-        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET
+        upload_preset: process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
       })
     });
 
