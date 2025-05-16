@@ -1,5 +1,3 @@
-// /pages/api/legal-assistant.js
-
 import formidable from "formidable";
 import fs from "fs";
 import path from "path";
@@ -28,7 +26,8 @@ export default async function handler(req, res) {
     const prompt = fields.prompt?.[0] || "";
     const fileUrl = fields.file?.[0] || null;
 
-    let systemPrompt = "אתה עורך דין מומחה בדיני זכויות יוצרים. נתח משפטית את המידע שהוזן על שימוש בקובץ לצרכים מסחריים.";
+    let systemPrompt =
+      "אתה עורך דין מומחה בדיני זכויות יוצרים. נתח משפטית את המידע שהוזן על שימוש בקובץ לצרכים מסחריים.";
 
     if (!prompt && !fileUrl) {
       return res.status(400).json({ error: "Missing prompt or file" });
@@ -37,16 +36,19 @@ export default async function handler(req, res) {
     try {
       const messages = [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `השאלה: ${prompt}${fileUrl ? `\nהקובץ שצורף: ${fileUrl}` : ""}` },
+        {
+          role: "user",
+          content: `השאלה: ${prompt}${fileUrl ? `\nהקובץ שצורף: ${fileUrl}` : ""}`,
+        },
       ];
 
-      const completion = await openai.createChatCompletion({
+      const completion = await openai.chat.completions.create({
         model: "gpt-4",
         messages,
         temperature: 0.4,
       });
 
-      const summary = completion.data.choices?.[0]?.message?.content || "";
+      const summary = completion.choices?.[0]?.message?.content || "";
       res.status(200).json({ summary });
     } catch (e) {
       console.error("Legal analysis error:", e);
