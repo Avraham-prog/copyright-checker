@@ -25,7 +25,7 @@ function FormDataSender({ formData, onResult }: { formData: FormData; onResult: 
       onResult(data.summary);
     } catch (e) {
       console.error("FormDataSender error:", e);
-      onResult("\u274c \u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05e9\u05dc\u05d9\u05d7\u05ea \u05d4\u05d1\u05e7\u05e9\u05d4 \u05dc\u200fLegal Assistant API");
+      setMessages((prev) => [...prev, { role: "assistant", content: "❌ שגיאה בשליחת הבקשה ל־Legal Assistant API" }]);
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ export default function App() {
         <CardContent className="space-y-4">
           {messages.map((m, i) => (
             <div key={i} className={`text-${m.role === "user" ? "right" : "left"} text-sm`}>
-              <strong>{m.role === "user" ? "\ud83d\udc64" : "\ud83e\uddd1\u200d\u2696\ufe0f"}</strong>: {m.content}
+             <strong>{m.role === "user" ? "👤" : "🧑‍⚖️"}</strong>: {m.content}
             </div>
           ))}
         </CardContent>
@@ -80,7 +80,7 @@ export default function App() {
 
       <div className="mt-6 space-y-4">
         <Textarea
-          placeholder="\u05db\u05ea\u05d5\u05d1 \u05db\u05d0\u05df \u05e9\u05d0\u05dc\u05d4 \u05d0\u05d5 \u05ea\u05d9\u05d0\u05d5\u05e8 \u05de\u05e9\u05e4\u05d8\u05d9..."
+          placeholder="כתוב כאן שאלה או תיאור משפטי..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
@@ -88,7 +88,7 @@ export default function App() {
         <FileUpload onUpload={(fileUrl) => setUpload(fileUrl)} />
 
         <Button onClick={handleSend} disabled={loading}>
-          {loading ? "\u05d1\u05d5\u05d3\u05e7..." : "\u05e9\u05dc\u05d7"}
+           {loading ? "בודק..." : "שלח"}
         </Button>
 
         {formDataToSend && (
