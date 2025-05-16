@@ -1,6 +1,9 @@
+// components/FileUpload.tsx
+"use client";
+
 import React, { useState } from "react";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
 
 interface Props {
   onUpload: (url: string) => void;
@@ -11,6 +14,7 @@ export default function FileUpload({ onUpload }: Props) {
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -18,6 +22,7 @@ export default function FileUpload({ onUpload }: Props) {
   const uploadToCloudinary = async (fileOrUrl: File | string) => {
     setLoading(true);
     setError("");
+    setSuccess(false);
 
     try {
       if (!cloudName || !uploadPreset) {
@@ -48,19 +53,20 @@ export default function FileUpload({ onUpload }: Props) {
       }
 
       const res = await fetch(
-        https://api.cloudinary.com/v1_1/${cloudName}/auto/upload,
+        `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`,
         options
       );
       const json = await res.json();
 
       if (!res.ok || !json.secure_url) {
         console.error("Cloudinary error:", json);
-        throw new Error(
-          json?.error?.message || "העלאה ל־Cloudinary נכשלה מסיבה לא ידועה"
-        );
+        throw new Error(json?.error?.message || "העלאה ל־Cloudinary נכשלה מסיבה לא ידועה");
       }
 
       onUpload(json.secure_url);
+      setFile(null);
+      setUrl("");
+      setSuccess(true);
     } catch (err: any) {
       setError(err.message || "אירעה שגיאה בהעלאה");
       console.error("Upload Error:", err);
@@ -87,7 +93,8 @@ export default function FileUpload({ onUpload }: Props) {
       >
         {loading ? "מעלה..." : "העלה ל-Cloudinary"}
       </Button>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
+      {error && <p className="text-red-600 text-sm">❌ {error}</p>}
+      {success && <p className="text-green-600 text-sm">✅ הקובץ הועלה בהצלחה</p>}
     </div>
   );
 }
