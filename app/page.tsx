@@ -6,7 +6,6 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import FileUpload from "../components/FileUpload";
 
-// רכיב חדש ששולח FormData
 function FormDataSender({ formData, onResult }: { formData: FormData; onResult: (res: string) => void }) {
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +25,7 @@ function FormDataSender({ formData, onResult }: { formData: FormData; onResult: 
       onResult(data.summary);
     } catch (e) {
       console.error("FormDataSender error:", e);
-      onResult("❌ שגיאה בשליחת הבקשה ל־Legal Assistant API");
+      onResult("\u274c \u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05e9\u05dc\u05d9\u05d7\u05ea \u05d4\u05d1\u05e7\u05e9\u05d4 \u05dc\u200fLegal Assistant API");
     } finally {
       setLoading(false);
     }
@@ -34,6 +33,7 @@ function FormDataSender({ formData, onResult }: { formData: FormData; onResult: 
 
   React.useEffect(() => {
     send();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return null;
@@ -44,7 +44,7 @@ export default function App() {
     {
       role: "assistant",
       content:
-        "👋 שלום! אני עורך דין וירטואלי שלך. מה תרצה לבדוק מבחינת זכויות יוצרים בקמפיין שלך? אפשר להעלות טקסט, קובץ או קישור.",
+        "\ud83d\udc4b \u05e9\u05dc\u05d5\u05dd! \u05d0\u05e0\u05d9 \u05e2\u05d5\u05e8\u05da \u05d3\u05d9\u05df \u05d5\u05d5\u05d9\u05e8\u05d8\u05d5\u05d0\u05dc\u05d9 \u05e9\u05dc\u05da. \u05de\u05d4 \u05ea\u05e8\u05e6\u05d4 \u05dc\u05d1\u05d3\u05d5\u05e7 \u05de\u05d1\u05d7\u05d9\u05e0\u05ea \u05d6\u05db\u05d5\u05d9\u05d5\u05ea \u05d9\u05d5\u05e6\u05e8\u05d9\u05dd \u05d1\u05e7\u05de\u05e4\u05d9\u05d9\u05df \u05e9\u05dc\u05da? \u05d0\u05e4\u05e9\u05e8 \u05dc\u05d4\u05e2\u05dc\u05d5\u05ea \u05d8\u05e7\u05e1\u05d8, \u05e7\u05d5\u05d1\u05e5 \u05d0\u05d5 \u05e7\u05d9\u05e9\u05d5\u05e8.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -72,7 +72,7 @@ export default function App() {
         <CardContent className="space-y-4">
           {messages.map((m, i) => (
             <div key={i} className={`text-${m.role === "user" ? "right" : "left"} text-sm`}>
-              <strong>{m.role === "user" ? "👤" : "🧑‍⚖️"}</strong>: {m.content}
+              <strong>{m.role === "user" ? "\ud83d\udc64" : "\ud83e\uddd1\u200d\u2696\ufe0f"}</strong>: {m.content}
             </div>
           ))}
         </CardContent>
@@ -80,7 +80,7 @@ export default function App() {
 
       <div className="mt-6 space-y-4">
         <Textarea
-          placeholder="כתוב כאן שאלה או תיאור משפטי..."
+          placeholder="\u05db\u05ea\u05d5\u05d1 \u05db\u05d0\u05df \u05e9\u05d0\u05dc\u05d4 \u05d0\u05d5 \u05ea\u05d9\u05d0\u05d5\u05e8 \u05de\u05e9\u05e4\u05d8\u05d9..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
         />
@@ -88,7 +88,7 @@ export default function App() {
         <FileUpload onUpload={(fileUrl) => setUpload(fileUrl)} />
 
         <Button onClick={handleSend} disabled={loading}>
-          {loading ? "בודק..." : "שלח"}
+          {loading ? "\u05d1\u05d5\u05d3\u05e7..." : "\u05e9\u05dc\u05d7"}
         </Button>
 
         {formDataToSend && (
