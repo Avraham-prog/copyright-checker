@@ -1,60 +1,93 @@
-// /pages/api/legal-assistant.js
+import React, { useState } from "react";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
 
-import formidable from "formidable";
-import fs from "fs";
-import path from "path";
-import { Configuration, OpenAIApi } from "openai";
+interface Props {
+  onUpload: (url: string) => void;
+}
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export default function FileUpload({ onUpload }: Props) {
+  const [file, setFile] = useState<File | null>(null);
+  const [url, setUrl] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-const openai = new OpenAIApi(
-  new Configuration({ apiKey: process.env.OPENAI_API_KEY })
-);
+  const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const form = new formidable.IncomingForm();
-  form.uploadDir = path.join(process.cwd(), "/tmp");
-  form.keepExtensions = true;
-
-  form.parse(req, async (err, fields, files) => {
-    const prompt = fields.prompt?.[0] || "";
-    const fileUrl = fields.file?.[0] || null;
-
-    let systemPrompt =
-      "אתה עורך דין מומחה בדיני זכויות יוצרים. נתח משפטית את המידע שהוזן על שימוש בקובץ לצרכים מסחריים.";
-
-    if (!prompt && !fileUrl) {
-      return res.status(400).json({ error: "Missing prompt or file" });
-    }
+  const uploadToCloudinary = async (fileOrUrl: File | string) => {
+    setLoading(true);
+    setError("");
 
     try {
-      const messages = [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `השאלה: ${prompt}${fileUrl ? `\nהקובץ שצורף: ${fileUrl}` : ""}`,
-        },
-      ];
+      if (!cloudName || !uploadPreset) {
+        throw new Error("הגדרות Cloudinary חסרות. ודא שהמשתנים קיימים ב־ENV שלך");
+      }
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages,
-        temperature: 0.4,
-      });
+      let data: FormData | string;
+      let options: RequestInit;
 
-      const summary = completion.choices?.[0]?.message?.content || "";
-      res.status(200).json({ summary });
-    } catch (e) {
-      console.error("Legal analysis error:", e);
-      res.status(500).json({ error: "Failed to generate legal analysis" });
+      if (typeof fileOrUrl === "string") {
+        data = JSON.stringify({
+          file: fileOrUrl,
+          upload_preset: uploadPreset,
+        });
+        options = {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: data,
+        };
+      } else {
+        data = new FormData();
+        data.append("file", fileOrUrl);
+        data.append("upload_preset", uploadPreset);
+        options = {
+          method: "POST",
+          body: data,
+        };
+      }
+
+      const res = await fetch(
+        https://api.cloudinary.com/v1_1/${cloudName}/auto/upload,
+        options
+      );
+      const json = await res.json();
+
+      if (!res.ok || !json.secure_url) {
+        console.error("Cloudinary error:", json);
+        throw new Error(
+          json?.error?.message || "העלאה ל־Cloudinary נכשלה מסיבה לא ידועה"
+        );
+      }
+
+      onUpload(json.secure_url);
+    } catch (err: any) {
+      setError(err.message || "אירעה שגיאה בהעלאה");
+      console.error("Upload Error:", err);
+    } finally {
+      setLoading(false);
     }
-  });
+  };
+
+  return (
+    <div className="space-y-4 mt-4">
+      <Input
+        type="file"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+      />
+      <Input
+        type="text"
+        placeholder="או הדבק כאן לינק ישיר לקובץ (MP3, YouTube וכו')"
+        value={url}
+        onChange={(e) => setUrl(e.target.value)}
+      />
+      <Button
+        onClick={() => uploadToCloudinary(file || url)}
+        disabled={loading || (!file && !url)}
+      >
+        {loading ? "מעלה..." : "העלה ל-Cloudinary"}
+      </Button>
+      {error && <p className="text-red-600 text-sm">{error}</p>}
+    </div>
+  );
 }
