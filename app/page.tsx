@@ -1,3 +1,4 @@
+// app/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -27,13 +28,15 @@ export default function App() {
     setLoading(true);
 
     try {
+      const formData = new FormData();
+      formData.append("prompt", input);
+      if (upload) {
+        formData.append("file", upload);
+      }
+
       const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL!, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_KEY}`,
-        },
-        body: JSON.stringify({ url: upload || input }),
+        body: formData,
       });
 
       if (!res.ok) {
@@ -59,7 +62,7 @@ export default function App() {
         <CardContent className="space-y-4">
           {messages.map((m, i) => (
             <div key={i} className={`text-${m.role === "user" ? "right" : "left"} text-sm`}>
-              <strong>{m.role === "user" ? "👤" : "🧑‍⚖️"}</strong>: {m.content}
+              <strong>{m.role === "user" ? "👤" : "🤑"}</strong>: {m.content}
             </div>
           ))}
         </CardContent>
