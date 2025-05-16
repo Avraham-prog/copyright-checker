@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Textarea } from "./components/ui/textarea";
-import { Button } from "./components/ui/button";
-import { Card, CardContent } from "./components/ui/card";
-import FileUpload from "./components/FileUpload";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import FileUpload from "@/components/FileUpload";
 
 export default function App() {
   const [messages, setMessages] = useState([
