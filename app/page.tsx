@@ -5,7 +5,39 @@ import { Textarea } from "../components/ui/textarea";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import FileUpload from "../components/FileUpload";
-import FormDataSender from "../components/FormDataSender";
+
+// רכיב חדש ששולח FormData
+function FormDataSender({ formData, onResult }: { formData: FormData; onResult: (res: string) => void }) {
+  const [loading, setLoading] = useState(false);
+
+  const send = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL!, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_KEY}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("API Error");
+      const data = await res.json();
+      onResult(data.summary);
+    } catch (e) {
+      console.error("FormDataSender error:", e);
+      onResult("❌ שגיאה בשליחת הבקשה ל־Legal Assistant API");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    send();
+  }, []);
+
+  return null;
+}
 
 export default function App() {
   const [messages, setMessages] = useState([
@@ -18,6 +50,7 @@ export default function App() {
   const [input, setInput] = useState("");
   const [upload, setUpload] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [formDataToSend, setFormDataToSend] = useState<FormData | null>(null);
 
   const handleSend = async () => {
     if (!input.trim() && !upload) return;
@@ -29,41 +62,8 @@ export default function App() {
 
     const formData = new FormData();
     formData.append("prompt", input);
-    if (upload) {
-      try {
-        const fileResponse = await fetch(upload);
-        const fileBlob = await fileResponse.blob();
-        const fileName = upload.split("/").pop() || "uploaded_file";
-        formData.append("file", new File([fileBlob], fileName, { type: fileBlob.type }));
-      } catch (e) {
-        console.error("File fetch error:", e);
-      }
-    }
-
-    try {
-      const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL!, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_KEY}`,
-        },
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error(`API Error: ${res.status}`);
-      }
-
-      const data = await res.json();
-      setMessages((prev) => [...prev, { role: "assistant", content: data.summary }]);
-    } catch (e) {
-      console.error("API Request failed:", e);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "❌ שגיאה בשליחת הבקשה. בדוק חיבור או נסה שוב מאוחר יותר." },
-      ]);
-    } finally {
-      setLoading(false);
-    }
+    if (upload) formData.append("file", upload);
+    setFormDataToSend(formData);
   };
 
   return (
@@ -91,9 +91,16 @@ export default function App() {
           {loading ? "בודק..." : "שלח"}
         </Button>
 
-        <FormDataSender formData={{ prompt: input, file: upload }} onResult={(summary) => {
-          setMessages((prev) => [...prev, { role: "assistant", content: summary }]);
-        }} />
+        {formDataToSend && (
+          <FormDataSender
+            formData={formDataToSend}
+            onResult={(summary) => {
+              setMessages((prev) => [...prev, { role: "assistant", content: summary }]);
+              setLoading(false);
+              setFormDataToSend(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );
