@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import FileUpload from "@/components/FileUpload";
+import { Textarea } from "../components/ui/textarea";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import FileUpload from "../components/FileUpload";
 
 export default function App() {
   const [messages, setMessages] = useState([
@@ -59,7 +59,7 @@ export default function App() {
         <CardContent className="space-y-4">
           {messages.map((m, i) => (
             <div key={i} className={`text-${m.role === "user" ? "right" : "left"} text-sm`}>
-              <strong>{m.role === "user" ? "👤" : "🧑\u200d⚖️"}</strong>: {m.content}
+              <strong>{m.role === "user" ? "👤" : "🧑‍⚖️"}</strong>: {m.content}
             </div>
           ))}
         </CardContent>
@@ -81,4 +81,3 @@ export default function App() {
     </div>
   );
 }
-
