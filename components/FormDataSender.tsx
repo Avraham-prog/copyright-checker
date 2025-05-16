@@ -6,7 +6,11 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Card, CardContent } from "./ui/card";
 
-export default function FormDataSender({ onResult }: { onResult: (res: string) => void }) {
+interface Props {
+  onResult: (res: string) => void;
+}
+
+export default function FormDataSender({ onResult }: Props) {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -18,6 +22,12 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
       return;
     }
 
+    const endpoint = process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL;
+    if (!endpoint) {
+      setError("NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL לא מוגדר");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -26,8 +36,11 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
       formData.append("prompt", prompt);
       if (file) formData.append("file", file);
 
-      const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "", {
+      const res = await fetch(endpoint, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_KEY || ""}`,
+        },
         body: formData,
       });
 
