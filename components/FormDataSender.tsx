@@ -21,26 +21,28 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
     setError("");
 
     try {
-      let imageUrl = "";
-
-      // אם מדובר בקובץ מסוג תמונה נעלה אותו ל-Cloudinary
-      if (file && file.type.startsWith("image/")) {
-        const cloudData = new FormData();
-        cloudData.append("file", file);
-        cloudData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "");
-        const cloudRes = await fetch("https://api.cloudinary.com/v1_1/" + process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME + "/image/upload", {
-          method: "POST",
-          body: cloudData,
-        });
-        const uploaded = await cloudRes.json();
-        if (!uploaded.secure_url) throw new Error("העלאת התמונה נכשלה");
-        imageUrl = uploaded.secure_url;
-      }
-
       const formData = new FormData();
       formData.append("prompt", prompt);
-      if (file && !imageUrl) formData.append("file", file); // לצרף קובץ רק אם לא הועלה ל-Cloudinary
-      if (imageUrl) formData.append("image", imageUrl); // אם יש URL, להעביר אותו לשרת
+
+      if (file) {
+        // העלאת הקובץ ל־Cloudinary
+        const cloudinaryForm = new FormData();
+        cloudinaryForm.append("file", file);
+        cloudinaryForm.append("upload_preset", "ml_default"); // ודא שיש לך upload_preset מתאים
+
+        const cloudinaryRes = await fetch("https://api.cloudinary.com/v1_1/db5injhva/image/upload", {
+          method: "POST",
+          body: cloudinaryForm,
+        });
+
+        const cloudinaryData = await cloudinaryRes.json();
+
+        if (!cloudinaryRes.ok || !cloudinaryData.secure_url) {
+          throw new Error("העלאה ל־Cloudinary נכשלה");
+        }
+
+        formData.append("image", cloudinaryData.secure_url);
+      }
 
       const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "", {
         method: "POST",
