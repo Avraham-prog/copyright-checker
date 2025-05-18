@@ -6,51 +6,18 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import FileUpload from "../components/FileUpload";
 
-function FormDataSender({ formData, onResult }: { formData: FormData; onResult: (res: string) => void }) {
-  const [loading, setLoading] = useState(false);
-
-  const send = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL!, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_KEY}`,
-        },
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("API Error");
-      const data = await res.json();
-      onResult(data.summary);
-    } catch (e) {
-      console.error("FormDataSender error:", e);
-      setMessages((prev) => [...prev, { role: "assistant", content: "❌ שגיאה בשליחת הבקשה ל־Legal Assistant API" }]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  React.useEffect(() => {
-    send();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  return null;
-}
-
 export default function App() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
       content:
-        "\ud83d\udc4b \u05e9\u05dc\u05d5\u05dd! \u05d0\u05e0\u05d9 \u05e2\u05d5\u05e8\u05da \u05d3\u05d9\u05df \u05d5\u05d5\u05d9\u05e8\u05d8\u05d5\u05d0\u05dc\u05d9 \u05e9\u05dc\u05da. \u05de\u05d4 \u05ea\u05e8\u05e6\u05d4 \u05dc\u05d1\u05d3\u05d5\u05e7 \u05de\u05d1\u05d7\u05d9\u05e0\u05ea \u05d6\u05db\u05d5\u05d9\u05d5\u05ea \u05d9\u05d5\u05e6\u05e8\u05d9\u05dd \u05d1\u05e7\u05de\u05e4\u05d9\u05d9\u05df \u05e9\u05dc\u05da? \u05d0\u05e4\u05e9\u05e8 \u05dc\u05d4\u05e2\u05dc\u05d5\u05ea \u05d8\u05e7\u05e1\u05d8, \u05e7\u05d5\u05d1\u05e5 \u05d0\u05d5 \u05e7\u05d9\u05e9\u05d5\u05e8.",
+        "👋 שלום! אני עורך דין וירטואלי שלך. מה תרצה לבדוק מבחינת זכויות יוצרים בקמפיין שלך? אפשר להעלות טקסט, קובץ או קישור.",
     },
   ]);
   const [input, setInput] = useState("");
   const [upload, setUpload] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const [formDataToSend, setFormDataToSend] = useState<FormData | null>(null);
+  const [error, setError] = useState("");
 
   const handleSend = async () => {
     if (!input.trim() && !upload) return;
@@ -59,11 +26,31 @@ export default function App() {
     setMessages(newMessages);
     setInput("");
     setLoading(true);
+    setError("");
 
-    const formData = new FormData();
-    formData.append("prompt", input);
-    if (upload) formData.append("file", upload);
-    setFormDataToSend(formData);
+    try {
+      const formData = new FormData();
+      formData.append("prompt", input);
+      if (upload) formData.append("fileUrl", upload);
+
+      const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL!, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "שגיאה לא ידועה מהשרת");
+      }
+
+      setMessages((prev) => [...prev, { role: "assistant", content: data.summary }]);
+    } catch (e: any) {
+      console.error("Legal Assistant Error:", e);
+      setMessages((prev) => [...prev, { role: "assistant", content: "❌ שגיאה בשליחת הבקשה ל־Legal Assistant API" }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -72,7 +59,7 @@ export default function App() {
         <CardContent className="space-y-4">
           {messages.map((m, i) => (
             <div key={i} className={`text-${m.role === "user" ? "right" : "left"} text-sm`}>
-             <strong>{m.role === "user" ? "👤" : "🧑‍⚖️"}</strong>: {m.content}
+              <strong>{m.role === "user" ? "👤" : "🧑‍⚖️"}</strong>: {m.content}
             </div>
           ))}
         </CardContent>
@@ -88,19 +75,9 @@ export default function App() {
         <FileUpload onUpload={(fileUrl) => setUpload(fileUrl)} />
 
         <Button onClick={handleSend} disabled={loading}>
-           {loading ? "בודק..." : "שלח"}
+          {loading ? "בודק..." : "שלח"}
         </Button>
-
-        {formDataToSend && (
-          <FormDataSender
-            formData={formDataToSend}
-            onResult={(summary) => {
-              setMessages((prev) => [...prev, { role: "assistant", content: summary }]);
-              setLoading(false);
-              setFormDataToSend(null);
-            }}
-          />
-        )}
+        {error && <p className="text-red-600 text-sm">❌ {error}</p>}
       </div>
     </div>
   );
