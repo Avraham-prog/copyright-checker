@@ -21,14 +21,30 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
     setError("");
 
     try {
+      let imageUrl = "";
+
+      // אם מדובר בקובץ מסוג תמונה נעלה אותו ל-Cloudinary
+      if (file && file.type.startsWith("image/")) {
+        const cloudData = new FormData();
+        cloudData.append("file", file);
+        cloudData.append("upload_preset", process.env.NEXT_PUBLIC_CLOUDINARY_PRESET || "");
+        const cloudRes = await fetch("https://api.cloudinary.com/v1_1/" + process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME + "/image/upload", {
+          method: "POST",
+          body: cloudData,
+        });
+        const uploaded = await cloudRes.json();
+        if (!uploaded.secure_url) throw new Error("העלאת התמונה נכשלה");
+        imageUrl = uploaded.secure_url;
+      }
+
       const formData = new FormData();
       formData.append("prompt", prompt);
-      if (file) formData.append("file", file);
+      if (file && !imageUrl) formData.append("file", file); // לצרף קובץ רק אם לא הועלה ל-Cloudinary
+      if (imageUrl) formData.append("image", imageUrl); // אם יש URL, להעביר אותו לשרת
 
       const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "", {
         method: "POST",
         body: formData,
-        // 🚫 אין headers כאן – זה קריטי
       });
 
       const data = await res.json();
