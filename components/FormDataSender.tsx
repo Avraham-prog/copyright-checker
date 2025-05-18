@@ -1,4 +1,3 @@
-// components/FormDataSender.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -28,10 +27,8 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
 
       const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_KEY}`,
-        },
         body: formData,
+        // 🚫 אין headers כאן – זה קריטי
       });
 
       const data = await res.json();
