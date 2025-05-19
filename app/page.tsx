@@ -31,7 +31,7 @@ const LegalAnalysisForm = () => {
       if (!imageUrl && file) {
         const uploadData = new FormData();
         uploadData.append("file", file);
-        uploadData.append("upload_preset", "ml_default"); // adjust if needed
+        uploadData.append("upload_preset", "unsigned_audio"); // adjust if needed
 
         const cloudinaryRes = await axios.post(
           "https://api.cloudinary.com/v1_1/db5injhva/image/upload",
