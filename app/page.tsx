@@ -2,17 +2,18 @@
 
 import React, { useState } from "react";
 import { Textarea } from "../components/ui/textarea";
+import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-import FileUpload from "../components/FileUpload";
 import axios from "axios";
 
-export default function FormDataSender({ onResult }: { onResult: (res: string) => void }) {
+const LegalAnalysisForm = () => {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [result, setResult] = useState("");
 
   const handleSubmit = async () => {
     if (!prompt && !file && !url) {
@@ -22,6 +23,7 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
 
     setLoading(true);
     setError("");
+    setResult("");
 
     try {
       let imageUrl = url;
@@ -29,7 +31,7 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
       if (!imageUrl && file) {
         const uploadData = new FormData();
         uploadData.append("file", file);
-        uploadData.append("upload_preset", "ml_default"); // adjust your preset
+        uploadData.append("upload_preset", "ml_default"); // adjust if needed
 
         const cloudinaryRes = await axios.post(
           "https://api.cloudinary.com/v1_1/db5injhva/image/upload",
@@ -43,10 +45,13 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
       formData.append("prompt", prompt);
       if (imageUrl) formData.append("image", imageUrl);
 
-      const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "", {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       const data = await res.json();
 
@@ -54,7 +59,7 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
         throw new Error(data.error || "שגיאה לא ידועה בשרת");
       }
 
-      onResult(data.summary);
+      setResult(data.summary);
     } catch (e: any) {
       setError(e.message || "אירעה שגיאה בשליחה");
     } finally {
@@ -65,8 +70,7 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
   return (
     <Card className="p-4">
       <CardContent className="space-y-4">
-        <textarea
-          className="w-full border p-2 rounded"
+        <Textarea
           placeholder="כתוב כאן תיאור משפטי או שאלה"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -82,7 +86,10 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
           {loading ? "⏳ חושב..." : "שלח לבדיקה משפטית"}
         </Button>
         {error && <p className="text-red-600 text-sm">❌ {error}</p>}
+        {result && <p className="text-green-800 whitespace-pre-wrap text-sm">✅ {result}</p>}
       </CardContent>
     </Card>
   );
-}
+};
+
+export default LegalAnalysisForm;
