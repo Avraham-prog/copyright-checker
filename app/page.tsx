@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
-import { Card, CardContent } from "../ui/card";
+import { Textarea } from "../components/ui/textarea";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import FileUpload from "../components/FileUpload";
 import axios from "axios";
 
 export default function FormDataSender({ onResult }: { onResult: (res: string) => void }) {
