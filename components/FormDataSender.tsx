@@ -161,10 +161,11 @@ export default function FormDataSender() {
             title="צרף קובץ"
           />
           <Textarea
+            rows={2}
             placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="flex-1 resize-none"
+            className="flex-1 min-h-[48px] resize-y rounded-md"
           />
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? "⏳ חושב..." : "שלח"}
