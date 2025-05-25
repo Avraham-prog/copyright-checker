@@ -7,7 +7,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-router.post("/legal-assistant", (req, res) => {
+router.post("/", (req, res) => {
   const form = formidable({ multiples: false });
 
   form.parse(req, async (err, fields) => {
