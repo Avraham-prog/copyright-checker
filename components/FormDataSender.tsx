@@ -154,19 +154,20 @@ export default function FormDataSender() {
 
       <div className="border-t p-4 space-y-2">
         <div className="flex gap-2 items-end">
+          <Input
+            type="file"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="w-[40px] p-0 border-none file:hidden"
+            title="צרף קובץ"
+          />
           <Textarea
-            placeholder="כתוב כאן תיאור משפטי או שאלה"
+            placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             className="flex-1 resize-none"
           />
-          <Input
-            type="file"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="w-[180px]"
-          />
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "⏳ חושב..." : "שלח לבדיקה משפטית"}
+            {loading ? "⏳ חושב..." : "שלח"}
           </Button>
         </div>
         <div className="flex justify-between">
