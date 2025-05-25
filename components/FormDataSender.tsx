@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Button } from "../ui/button";
-import { Card, CardContent } from "../ui/card";
+import { Textarea } from "../components/ui/textarea";
+import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
 import axios from "axios";
 
 interface Message {
@@ -14,7 +14,7 @@ interface Message {
   response?: string;
 }
 
-export default function FormDataSender() {
+const LegalAnalysisForm = () => {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState("");
@@ -51,6 +51,8 @@ export default function FormDataSender() {
       formData.append("prompt", prompt);
       if (imageUrl) formData.append("image", imageUrl);
 
+      setMessages((prev) => [...prev, { type: "user", prompt, imageUrl }]);
+
       const res = await fetch(
         process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "",
         {
@@ -67,7 +69,6 @@ export default function FormDataSender() {
 
       setMessages((prev) => [
         ...prev,
-        { type: "user", prompt, imageUrl },
         { type: "bot", prompt, response: data.summary },
       ]);
 
@@ -98,7 +99,9 @@ export default function FormDataSender() {
               />
             )}
             {msg.response && (
-              <p className="mt-2 whitespace-pre-wrap">{msg.response}</p>
+              <p className="mt-2 whitespace-pre-wrap text-green-800">
+                {msg.response}
+              </p>
             )}
           </div>
         ))}
@@ -122,4 +125,6 @@ export default function FormDataSender() {
       </CardContent>
     </Card>
   );
-}
+};
+
+export default LegalAnalysisForm;
