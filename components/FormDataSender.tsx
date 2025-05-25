@@ -171,7 +171,7 @@ export default function FormDataSender() {
         </div>
         <div className="flex justify-between">
           {error && <p className="text-red-600 text-sm">❌ {error}</p>}
-          <Button variant="ghost" className="text-xs text-gray-500" onClick={handleReset}>
+          <Button className="text-xs text-gray-500 bg-transparent hover:bg-gray-100" onClick={handleReset}>
             נקה שיחה 🗑️
           </Button>
         </div>
