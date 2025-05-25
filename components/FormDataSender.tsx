@@ -16,10 +16,16 @@ interface Message {
 export default function FormDataSender() {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("chat_history");
+      return stored ? JSON.parse(stored) : [];
+    }
+    return [];
+  });
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -28,11 +34,12 @@ export default function FormDataSender() {
 
   useEffect(() => {
     scrollToBottom();
+    localStorage.setItem("chat_history", JSON.stringify(messages));
   }, [messages]);
 
   const handleSubmit = async () => {
-    if (!prompt && !file && !url) {
-      setError("יש להזין טקסט, לבחור קובץ או להדביק URL");
+    if (!prompt && !file) {
+      setError("יש להזין טקסט או לבחור קובץ מדיה");
       return;
     }
 
@@ -40,9 +47,9 @@ export default function FormDataSender() {
     setError("");
 
     try {
-      let imageUrl = url;
+      let imageUrl = "";
 
-      if (!imageUrl && file) {
+      if (file) {
         const uploadData = new FormData();
         uploadData.append("file", file);
         uploadData.append("upload_preset", "unsigned_audio");
@@ -75,18 +82,22 @@ export default function FormDataSender() {
 
       setMessages((prev) => [
         ...prev,
-        { type: "user", prompt, imageUrl },
+        { type: "user", prompt, imageUrl: imageUrl || undefined },
         { type: "bot", prompt, response: data.summary },
       ]);
 
       setPrompt("");
       setFile(null);
-      setUrl("");
     } catch (e: any) {
       setError(e.message || "אירעה שגיאה בשליחה");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleReset = () => {
+    setMessages([]);
+    localStorage.removeItem("chat_history");
   };
 
   return (
@@ -120,29 +131,28 @@ export default function FormDataSender() {
       </div>
 
       <div className="border-t p-4 space-y-2">
-        <Textarea
-          placeholder="כתוב כאן תיאור משפטי או שאלה"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-        />
-        <Input
-          type="file"
-          onChange={(e) => setFile(e.target.files?.[0] || null)}
-        />
-        <Input
-          type="text"
-          placeholder="או הדבק כאן לינק לתמונה / YouTube"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
-        <Button
-          onClick={handleSubmit}
-          disabled={loading}
-          className="w-full"
-        >
-          {loading ? "⏳ חושב..." : "שלח לבדיקה משפטית"}
-        </Button>
-        {error && <p className="text-red-600 text-sm">❌ {error}</p>}
+        <div className="flex gap-2 items-end">
+          <Textarea
+            placeholder="כתוב כאן תיאור משפטי או שאלה"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            className="flex-1 resize-none"
+          />
+          <Input
+            type="file"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="w-[180px]"
+          />
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "⏳ חושב..." : "שלח לבדיקה משפטית"}
+          </Button>
+        </div>
+        <div className="flex justify-between">
+          {error && <p className="text-red-600 text-sm">❌ {error}</p>}
+          <Button variant="ghost" className="text-xs text-gray-500" onClick={handleReset}>
+            נקה שיחה 🗑️
+          </Button>
+        </div>
       </div>
     </div>
   );
