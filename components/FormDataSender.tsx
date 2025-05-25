@@ -2,18 +2,29 @@
 
 import React, { useState } from "react";
 import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
+import axios from "axios";
 
-export default function FormDataSender({ onResult }: { onResult: (res: string) => void }) {
+interface Message {
+  type: "user" | "bot";
+  prompt: string;
+  imageUrl?: string;
+  response?: string;
+}
+
+export default function FormDataSender() {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const handleSubmit = async () => {
-    if (!prompt && !file) {
-      setError("יש להזין טקסט או לבחור קובץ");
+    if (!prompt && !file && !url) {
+      setError("יש להזין טקסט, לבחור קובץ או להדביק URL");
       return;
     }
 
@@ -21,33 +32,32 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
     setError("");
 
     try {
-      const formData = new FormData();
-      formData.append("prompt", prompt);
+      let imageUrl = url;
 
-      if (file) {
-        // העלאת הקובץ ל־Cloudinary
-        const cloudinaryForm = new FormData();
-        cloudinaryForm.append("file", file);
-        cloudinaryForm.append("upload_preset", "ml_default"); // ודא שיש לך upload_preset מתאים
+      if (!imageUrl && file) {
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+        uploadData.append("upload_preset", "unsigned_audio");
 
-        const cloudinaryRes = await fetch("https://api.cloudinary.com/v1_1/db5injhva/image/upload", {
-          method: "POST",
-          body: cloudinaryForm,
-        });
+        const cloudinaryRes = await axios.post(
+          "https://api.cloudinary.com/v1_1/db5injhva/image/upload",
+          uploadData
+        );
 
-        const cloudinaryData = await cloudinaryRes.json();
-
-        if (!cloudinaryRes.ok || !cloudinaryData.secure_url) {
-          throw new Error("העלאה ל־Cloudinary נכשלה");
-        }
-
-        formData.append("image", cloudinaryData.secure_url);
+        imageUrl = cloudinaryRes.data.secure_url;
       }
 
-      const res = await fetch(process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "", {
-        method: "POST",
-        body: formData,
-      });
+      const formData = new FormData();
+      formData.append("prompt", prompt);
+      if (imageUrl) formData.append("image", imageUrl);
+
+      const res = await fetch(
+        process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       const data = await res.json();
 
@@ -55,7 +65,15 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
         throw new Error(data.error || "שגיאה לא ידועה בשרת");
       }
 
-      onResult(data.summary);
+      setMessages((prev) => [
+        ...prev,
+        { type: "user", prompt, imageUrl },
+        { type: "bot", prompt, response: data.summary },
+      ]);
+
+      setPrompt("");
+      setFile(null);
+      setUrl("");
     } catch (e: any) {
       setError(e.message || "אירעה שגיאה בשליחה");
     } finally {
@@ -64,17 +82,41 @@ export default function FormDataSender({ onResult }: { onResult: (res: string) =
   };
 
   return (
-    <Card className="p-4">
+    <Card className="p-4 space-y-4">
       <CardContent className="space-y-4">
-        <textarea
-          className="w-full border p-2 rounded"
+        {messages.map((msg, index) => (
+          <div key={index} className="bg-gray-100 p-2 rounded">
+            <p className="font-semibold">
+              {msg.type === "user" ? "🧑‍💼 אתה" : "🧠 עורך הדין הווירטואלי"}:
+            </p>
+            <p className="whitespace-pre-wrap">{msg.prompt}</p>
+            {msg.imageUrl && (
+              <img
+                src={msg.imageUrl}
+                alt="uploaded"
+                className="mt-2 max-w-xs rounded"
+              />
+            )}
+            {msg.response && (
+              <p className="mt-2 whitespace-pre-wrap">{msg.response}</p>
+            )}
+          </div>
+        ))}
+
+        <Textarea
           placeholder="כתוב כאן תיאור משפטי או שאלה"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
         <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+        <Input
+          type="text"
+          placeholder="או הדבק כאן לינק לתמונה / YouTube"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        />
         <Button onClick={handleSubmit} disabled={loading}>
-          {loading ? "שולח..." : "שלח לבדיקה משפטית"}
+          {loading ? "⏳ חושב..." : "שלח לבדיקה משפטית"}
         </Button>
         {error && <p className="text-red-600 text-sm">❌ {error}</p>}
       </CardContent>
