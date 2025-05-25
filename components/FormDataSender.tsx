@@ -11,6 +11,7 @@ interface Message {
   prompt: string;
   imageUrl?: string;
   response?: string;
+  timestamp: number;
 }
 
 export default function FormDataSender() {
@@ -36,6 +37,11 @@ export default function FormDataSender() {
     scrollToBottom();
     localStorage.setItem("chat_history", JSON.stringify(messages));
   }, [messages]);
+
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
   const handleSubmit = async () => {
     if (!prompt && !file) {
@@ -66,6 +72,13 @@ export default function FormDataSender() {
       formData.append("prompt", prompt);
       if (imageUrl) formData.append("image", imageUrl);
 
+      const timestamp = Date.now();
+
+      setMessages((prev) => [
+        ...prev,
+        { type: "user", prompt, imageUrl: imageUrl || undefined, timestamp },
+      ]);
+
       const res = await fetch(
         process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "",
         {
@@ -82,8 +95,7 @@ export default function FormDataSender() {
 
       setMessages((prev) => [
         ...prev,
-        { type: "user", prompt, imageUrl: imageUrl || undefined },
-        { type: "bot", prompt, response: data.summary },
+        { type: "bot", prompt, response: data.summary, timestamp: Date.now() },
       ]);
 
       setPrompt("");
@@ -115,6 +127,9 @@ export default function FormDataSender() {
                   : "bg-gray-100 text-left"
               }`}
             >
+              <div className="text-[10px] text-gray-400 mb-1">
+                {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
+              </div>
               {msg.imageUrl && (
                 <img
                   src={msg.imageUrl}
@@ -127,6 +142,13 @@ export default function FormDataSender() {
             </div>
           </div>
         ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 px-4 py-2 rounded-xl shadow-sm text-sm text-gray-500 animate-pulse">
+              כותב תשובה...
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
 
