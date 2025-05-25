@@ -165,7 +165,7 @@ export default function FormDataSender() {
             placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="flex-1 min-h-[40px] resize-y rounded-md"
+            className="flex-1 resize-none min-h-[56px] px-3 py-2 text-sm border rounded"
           />
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? "⏳ חושב..." : "שלח"}
