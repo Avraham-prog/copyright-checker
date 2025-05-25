@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Input } from "./ui/input";
-// החלפת Textarea לרכיב HTML רגיל לבדיקה
+import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import axios from "axios";
 
@@ -11,22 +11,15 @@ interface Message {
   prompt: string;
   imageUrl?: string;
   response?: string;
-  timestamp: number;
 }
 
 export default function FormDataSender() {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [messages, setMessages] = useState<Message[]>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("chat_history");
-      return stored ? JSON.parse(stored) : [];
-    }
-    return [];
-  });
-
+  const [messages, setMessages] = useState<Message[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -35,17 +28,11 @@ export default function FormDataSender() {
 
   useEffect(() => {
     scrollToBottom();
-    localStorage.setItem("chat_history", JSON.stringify(messages));
   }, [messages]);
 
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
-
   const handleSubmit = async () => {
-    if (!prompt && !file) {
-      setError("יש להזין טקסט או לבחור קובץ מדיה");
+    if (!prompt && !file && !url) {
+      setError("יש להזין טקסט, לבחור קובץ או להדביק URL");
       return;
     }
 
@@ -53,9 +40,9 @@ export default function FormDataSender() {
     setError("");
 
     try {
-      let imageUrl = "";
+      let imageUrl = url;
 
-      if (file) {
+      if (!imageUrl && file) {
         const uploadData = new FormData();
         uploadData.append("file", file);
         uploadData.append("upload_preset", "unsigned_audio");
@@ -71,13 +58,6 @@ export default function FormDataSender() {
       const formData = new FormData();
       formData.append("prompt", prompt);
       if (imageUrl) formData.append("image", imageUrl);
-
-      const timestamp = Date.now();
-
-      setMessages((prev) => [
-        ...prev,
-        { type: "user", prompt, imageUrl: imageUrl || undefined, timestamp },
-      ]);
 
       const res = await fetch(
         process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "",
@@ -95,21 +75,18 @@ export default function FormDataSender() {
 
       setMessages((prev) => [
         ...prev,
-        { type: "bot", prompt, response: data.summary, timestamp: Date.now() },
+        { type: "user", prompt, imageUrl },
+        { type: "bot", prompt, response: data.summary },
       ]);
 
       setPrompt("");
       setFile(null);
+      setUrl("");
     } catch (e: any) {
       setError(e.message || "אירעה שגיאה בשליחה");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleReset = () => {
-    setMessages([]);
-    localStorage.removeItem("chat_history");
   };
 
   return (
@@ -127,9 +104,6 @@ export default function FormDataSender() {
                   : "bg-gray-100 text-left"
               }`}
             >
-              <div className="text-[10px] text-gray-400 mb-1">
-                {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
-              </div>
               {msg.imageUrl && (
                 <img
                   src={msg.imageUrl}
@@ -142,40 +116,33 @@ export default function FormDataSender() {
             </div>
           </div>
         ))}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 px-4 py-2 rounded-xl shadow-sm text-sm text-gray-500 animate-pulse">
-              כותב תשובה...
-            </div>
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
       <div className="border-t p-4 space-y-2">
-        <div className="flex items-end gap-2 w-full">
-          <Input
-            type="file"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="w-[36px] p-0 m-0 border-none text-xs file:mr-0"
-            title="צרף קובץ"
-          />
-          <textarea
-            placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            className="flex-1 border border-gray-300 rounded p-2 text-sm min-h-[50px] bg-white"
-          />
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "⏳ חושב..." : "שלח"}
-          </Button>
-        </div>
-        <div className="flex justify-between">
-          {error && <p className="text-red-600 text-sm">❌ {error}</p>}
-          <Button className="text-xs text-gray-500 bg-transparent hover:bg-gray-100" onClick={handleReset}>
-            נקה שיחה 🗑️
-          </Button>
-        </div>
+        <Textarea
+          placeholder="כתוב כאן תיאור משפטי או שאלה"
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+        />
+        <Input
+          type="file"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+        />
+        <Input
+          type="text"
+          placeholder="או הדבק כאן לינק לתמונה / YouTube"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+        <Button
+          onClick={handleSubmit}
+          disabled={loading}
+          className="w-full"
+        >
+          {loading ? "⏳ חושב..." : "שלח לבדיקה משפטית"}
+        </Button>
+        {error && <p className="text-red-600 text-sm">❌ {error}</p>}
       </div>
     </div>
   );
