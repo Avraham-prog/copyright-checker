@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
+// החלפת Textarea לרכיב HTML רגיל לבדיקה
 import { Button } from "./ui/button";
 import axios from "axios";
 
@@ -160,12 +160,11 @@ export default function FormDataSender() {
             className="w-[36px] p-0 m-0 border-none text-xs file:mr-0"
             title="צרף קובץ"
           />
-          <Textarea
-            rows={2}
+          <textarea
             placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="flex-1 resize-none min-h-[56px] px-3 py-2 text-sm border rounded"
+            className="flex-1 border border-gray-300 rounded p-2 text-sm min-h-[50px] bg-white"
           />
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? "⏳ חושב..." : "שלח"}
