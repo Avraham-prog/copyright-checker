@@ -23,7 +23,7 @@ function summarizeMessages(messages: Message[]): string {
         : `תשובה: ${msg.response}`
     )
     .join("\n");
-  return joined.length > 5000 ? joined.slice(-5000) : joined;
+  return joined.length > 3000 ? joined.slice(-3000) : joined;
 }
 
 export default function FormDataSender() {
@@ -174,26 +174,26 @@ export default function FormDataSender() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t p-4">
-        <div className="flex items-end gap-2 w-full">
-          <Textarea
-            rows={2}
-            placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            className="flex-1 min-h-[40px] resize-y rounded-md"
-          />
+      <div className="border-t p-4 space-y-2">
+        <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-end w-full">
           <Input
             type="file"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="w-[150px] border p-1 file:text-sm file:rounded"
+            className="w-[36px] p-0 m-0 border-none text-xs file:mr-0"
             title="צרף קובץ"
           />
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? "⏳ חושב..." : "שלח"}
+          <Textarea
+            rows={1}
+            placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            className="min-h-[42px] resize-none"
+          />
+          <Button onClick={handleSubmit} disabled={loading} className="min-w-[72px]">
+            {loading ? "⏳" : "שלח"}
           </Button>
         </div>
-        <div className="flex justify-between mt-2">
+        <div className="flex justify-between">
           {error && <p className="text-red-600 text-sm">❌ {error}</p>}
           <Button
             className="text-xs text-gray-500 bg-transparent hover:bg-gray-100"
