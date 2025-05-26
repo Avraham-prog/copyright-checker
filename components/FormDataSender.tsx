@@ -156,7 +156,7 @@ export default function FormDataSender() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="border-t p-4 space-y-2">
+      <div className="border-t p-4">
         <div className="flex items-end gap-2 w-full">
           <Input
             type="file"
@@ -165,17 +165,17 @@ export default function FormDataSender() {
             title="צרף קובץ"
           />
           <Textarea
-            rows={2}
+            rows={1}
             placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="flex-1 min-h-[40px] resize-y rounded-md"
+            className="flex-1 min-h-[40px] resize-none rounded-md"
           />
           <Button onClick={handleSubmit} disabled={loading}>
             {loading ? "⏳ חושב..." : "שלח"}
           </Button>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between mt-2">
           {error && <p className="text-red-600 text-sm">❌ {error}</p>}
           <Button className="text-xs text-gray-500 bg-transparent hover:bg-gray-100" onClick={handleReset}>
             נקה שיחה 🗑️
