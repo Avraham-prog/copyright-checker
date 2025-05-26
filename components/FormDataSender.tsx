@@ -4,8 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
-import axios from "axios";
 import ChatSidebar from "./ChatSidebar";
+import axios from "axios";
 
 interface Message {
   type: "user" | "bot";
@@ -27,28 +27,14 @@ function summarizeMessages(messages: Message[]): string {
   return joined.length > 3000 ? joined.slice(-3000) : joined;
 }
 
-function getOrCreateChatId(): string {
-  if (typeof window !== "undefined") {
-    let id = localStorage.getItem("chat_id");
-    if (!id) {
-      id = `chat_${Date.now()}`;
-      localStorage.setItem("chat_id", id);
-    }
-    return id;
-  }
-  return "chat_default";
-}
-
 export default function FormDataSender() {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [lastImage, setLastImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const chatId = getOrCreateChatId();
   const [messages, setMessages] = useState<Message[]>(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem(chatId);
+      const stored = localStorage.getItem("chat_current");
       return stored ? JSON.parse(stored) : [];
     }
     return [];
@@ -61,7 +47,7 @@ export default function FormDataSender() {
   };
 
   useEffect(() => {
-    localStorage.setItem(chatId, JSON.stringify(messages));
+    localStorage.setItem("chat_current", JSON.stringify(messages));
     scrollToBottom();
   }, [messages]);
 
@@ -71,7 +57,7 @@ export default function FormDataSender() {
   };
 
   const handleSubmit = async () => {
-    if (!prompt && !file && !lastImage) {
+    if (!prompt && !file) {
       setError("יש להזין טקסט או לבחור קובץ מדיה");
       return;
     }
@@ -80,7 +66,7 @@ export default function FormDataSender() {
     setError("");
 
     try {
-      let imageUrl = lastImage || "";
+      let imageUrl = "";
 
       if (file) {
         const uploadData = new FormData();
@@ -93,7 +79,6 @@ export default function FormDataSender() {
         );
 
         imageUrl = cloudinaryRes.data.secure_url;
-        setLastImage(imageUrl);
       }
 
       const formData = new FormData();
@@ -134,6 +119,7 @@ export default function FormDataSender() {
       };
 
       setMessages((prev) => [...prev, newBotMessage]);
+
       setPrompt("");
       setFile(null);
     } catch (e: any) {
@@ -145,9 +131,8 @@ export default function FormDataSender() {
 
   const handleReset = () => {
     setMessages([]);
-    setLastImage(null);
     if (typeof window !== "undefined") {
-      localStorage.removeItem(chatId);
+      localStorage.removeItem("chat_current");
     }
   };
 
@@ -178,7 +163,7 @@ export default function FormDataSender() {
                     className="mb-2 max-w-xs rounded"
                   />
                 )}
-                <p>{msg.type === "user" ? msg.prompt : msg.response}</p>
+                {msg.type === "user" ? <p>{msg.prompt}</p> : <p>{msg.response}</p>}
               </div>
             </div>
           ))}
@@ -222,4 +207,6 @@ export default function FormDataSender() {
           </div>
         </div>
       </div>
-    </d
+    </div>
+  );
+}
