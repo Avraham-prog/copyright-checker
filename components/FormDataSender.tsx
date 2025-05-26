@@ -23,7 +23,7 @@ function summarizeMessages(messages: Message[]): string {
         : `תשובה: ${msg.response}`
     )
     .join("\n");
-  return joined.length > 3000 ? joined.slice(-3000) : joined;
+  return joined.length > 5000 ? joined.slice(-5000) : joined;
 }
 
 export default function FormDataSender() {
@@ -136,71 +136,71 @@ export default function FormDataSender() {
   };
 
   return (
-    <div className="flex flex-row h-screen">
-      <div className="w-64 bg-gray-100 p-4 border-r">(כאן ייכנס ChatSidebar.tsx)</div>
-      <div className="flex flex-col flex-1 h-screen max-w-5xl mx-auto border rounded shadow bg-white overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((msg, index) => (
+    <div className="flex flex-col h-[90vh] max-w-3xl mx-auto border rounded shadow bg-white overflow-hidden">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
+          >
             <div
-              key={index}
-              className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
+              className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
+                msg.type === "user"
+                  ? "bg-green-100 text-right"
+                  : "bg-gray-100 text-left"
+              }`}
             >
-              <div
-                className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
-                  msg.type === "user"
-                    ? "bg-green-100 text-right"
-                    : "bg-gray-100 text-left"
-                }`}
-              >
-                <div className="text-[10px] text-gray-400 mb-1">
-                  {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
-                </div>
-                {msg.imageUrl && (
-                  <img
-                    src={msg.imageUrl}
-                    alt="uploaded"
-                    className="mb-2 max-w-xs rounded"
-                  />
-                )}
-                {msg.type === "user" ? <p>{msg.prompt}</p> : <p>{msg.response}</p>}
+              <div className="text-[10px] text-gray-400 mb-1">
+                {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
               </div>
+              {msg.imageUrl && (
+                <img
+                  src={msg.imageUrl}
+                  alt="uploaded"
+                  className="mb-2 max-w-xs rounded"
+                />
+              )}
+              {msg.type === "user" ? <p>{msg.prompt}</p> : <p>{msg.response}</p>}
             </div>
-          ))}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 px-4 py-2 rounded-xl shadow-sm text-sm text-gray-500 animate-pulse">
-                כותב תשובה...
-              </div>
+          </div>
+        ))}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 px-4 py-2 rounded-xl shadow-sm text-sm text-gray-500 animate-pulse">
+              כותב תשובה...
             </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
 
-        <div className="border-t p-4 space-y-2">
-          <div className="flex items-end gap-2 w-full">
-            <Input
-              type="file"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="w-[36px] p-0 m-0 border-none text-xs file:mr-0"
-              title="צרף קובץ"
-            />
-            <Textarea
-              rows={2}
-              placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="flex-1 min-h-[40px] resize-y rounded-md"
-            />
-            <Button onClick={handleSubmit} disabled={loading}>
-              {loading ? "⏳ חושב..." : "שלח"}
-            </Button>
-          </div>
-          <div className="flex justify-between">
-            {error && <p className="text-red-600 text-sm">❌ {error}</p>}
-            <Button className="text-xs text-gray-500 bg-transparent hover:bg-gray-100" onClick={handleReset}>
-              נקה שיחה 🗑️
-            </Button>
-          </div>
+      <div className="border-t p-4">
+        <div className="flex items-end gap-2 w-full">
+          <Textarea
+            rows={2}
+            placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            className="flex-1 min-h-[40px] resize-y rounded-md"
+          />
+          <Input
+            type="file"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="w-[150px] border p-1 file:text-sm file:rounded"
+            title="צרף קובץ"
+          />
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "⏳ חושב..." : "שלח"}
+          </Button>
+        </div>
+        <div className="flex justify-between mt-2">
+          {error && <p className="text-red-600 text-sm">❌ {error}</p>}
+          <Button
+            className="text-xs text-gray-500 bg-transparent hover:bg-gray-100"
+            onClick={handleReset}
+          >
+            נקה שיחה 🗑️
+          </Button>
         </div>
       </div>
     </div>
