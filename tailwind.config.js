@@ -1,9 +1,11 @@
 module.exports = {
-  content: [
-    "./app/**/*.{js,ts,jsx,tsx}",     // ← חובה אם אתה עובד עם Next.js App Router
-    "./components/**/*.{js,ts,jsx,tsx}",
-    "./pages/**/*.{js,ts,jsx,tsx}"     // ← רלוונטי לפרויקטים ישנים
-  ],
+content: [
+  './app/**/*.{js,ts,jsx,tsx,mdx}', // שימו לב לתיקיית `app`
+  './pages/**/*.{js,ts,jsx,tsx,mdx}',
+  './components/**/*.{js,ts,jsx,tsx,mdx}',
+  // אם קיים src
+  './src/**/*.{js,ts,jsx,tsx,mdx}',
+],
   theme: {
     extend: {}
   },
