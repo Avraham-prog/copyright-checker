@@ -15,15 +15,15 @@ interface Message {
 }
 
 function summarizeMessages(messages: Message[]): string {
-  const joined = messages
-    .filter((msg) => msg.type === "user" || msg.type === "bot")
-    .map((msg) =>
-      msg.type === "user"
-        ? `שאלה: ${msg.prompt}`
-        : `תשובה: ${msg.response}`
-    )
-    .join("\n");
-  return joined.length > 3000 ? joined.slice(-3000) : joined;
+  const chunks = messages.map((msg) => {
+    const imagePart = msg.imageUrl ? `(קובץ: ${msg.imageUrl})` : "";
+    if (msg.type === "user") return `שאלה: ${msg.prompt} ${imagePart}`;
+    if (msg.type === "bot") return `תשובה: ${msg.response}`;
+    return "";
+  });
+
+  const fullText = chunks.join("\n");
+  return fullText.length > 3000 ? fullText.slice(-3000) : fullText;
 }
 
 export default function FormDataSender() {
@@ -78,6 +78,10 @@ export default function FormDataSender() {
         );
 
         imageUrl = cloudinaryRes.data.secure_url;
+      } else {
+        // שלח את הקובץ האחרון אם יש
+        const lastImage = [...messages].reverse().find((msg) => msg.imageUrl);
+        if (lastImage) imageUrl = lastImage.imageUrl || "";
       }
 
       const formData = new FormData();
