@@ -27,6 +27,11 @@ export default function ChatSidebar({
     }
   }, []);
 
+  const saveConversations = (list: Conversation[]) => {
+    setConversations(list);
+    localStorage.setItem("all_conversations", JSON.stringify(list));
+  };
+
   const handleSelect = (id: string) => {
     onSelect(id);
   };
@@ -42,9 +47,31 @@ export default function ChatSidebar({
       createdAt: Date.now(),
     };
     const updated = [newConv, ...conversations];
-    setConversations(updated);
-    localStorage.setItem("all_conversations", JSON.stringify(updated));
+    saveConversations(updated);
     onNew(newId);
+  };
+
+  const handleRename = (id: string) => {
+    const newTitle = prompt("שנה שם שיחה:");
+    if (newTitle) {
+      const updated = conversations.map((conv) =>
+        conv.id === id ? { ...conv, title: newTitle } : conv
+      );
+      saveConversations(updated);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("למחוק את השיחה לצמיתות?")) {
+      const updated = conversations.filter((conv) => conv.id !== id);
+      saveConversations(updated);
+      localStorage.removeItem(`chat_${id}`);
+      if (currentId === id && updated.length > 0) {
+        onSelect(updated[0].id);
+      } else if (updated.length === 0) {
+        handleNewChat();
+      }
+    }
   };
 
   return (
@@ -56,12 +83,32 @@ export default function ChatSidebar({
         {conversations.map((conv) => (
           <div
             key={conv.id}
-            onClick={() => handleSelect(conv.id)}
-            className={`cursor-pointer p-2 rounded text-sm hover:bg-gray-200 ${
+            className={`group cursor-pointer p-2 rounded text-sm hover:bg-gray-200 ${
               conv.id === currentId ? "bg-white border shadow-sm" : ""
             }`}
           >
-            {conv.title}
+            <div
+              className="flex justify-between items-center"
+              onClick={() => handleSelect(conv.id)}
+            >
+              <span className="truncate w-[70%]">{conv.title}</span>
+              <div className="hidden group-hover:flex gap-1 text-xs">
+                <button
+                  className="text-blue-500 hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRename(conv.id);
+                  }}
+                >ערוך</button>
+                <button
+                  className="text-red-500 hover:underline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(conv.id);
+                  }}
+                >מחק</button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
