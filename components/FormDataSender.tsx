@@ -45,6 +45,20 @@ export default function FormDataSender() {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
+  const summarizeHistory = (history: Message[], maxLength = 2000) => {
+    const summary: string[] = [];
+    let length = 0;
+
+    for (let i = history.length - 1; i >= 0; i--) {
+      const item = history[i];
+      const line = `${item.type === "user" ? "שאלה" : "תשובה"}: ${item.prompt}${item.response ? "\nתשובה: " + item.response : ""}`;
+      length += line.length;
+      if (length > maxLength) break;
+      summary.unshift(line);
+    }
+    return summary.join("\n---\n");
+  };
+
   const handleSubmit = async () => {
     if (!prompt && !file) {
       setError("יש להזין טקסט או לבחור קובץ מדיה");
@@ -70,16 +84,19 @@ export default function FormDataSender() {
         imageUrl = cloudinaryRes.data.secure_url;
       }
 
-      const formData = new FormData();
-      formData.append("prompt", prompt);
-      if (imageUrl) formData.append("image", imageUrl);
-
       const timestamp = Date.now();
-
-      setMessages((prev) => [
-        ...prev,
+      const updatedMessages = [
+        ...messages,
         { type: "user", prompt, imageUrl: imageUrl || undefined, timestamp },
-      ]);
+      ];
+
+      setMessages(updatedMessages);
+
+      const summarized = summarizeHistory(updatedMessages);
+
+      const formData = new FormData();
+      formData.append("prompt", `${summarized}\n---\nשאלה חדשה: ${prompt}`);
+      if (imageUrl) formData.append("image", imageUrl);
 
       const res = await fetch(
         process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "",
@@ -126,9 +143,7 @@ export default function FormDataSender() {
           >
             <div
               className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
-                msg.type === "user"
-                  ? "bg-green-100 text-right"
-                  : "bg-gray-100 text-left"
+                msg.type === "user" ? "bg-green-100 text-right" : "bg-gray-100 text-left"
               }`}
             >
               <div className="text-[10px] text-gray-400 mb-1">
@@ -157,7 +172,7 @@ export default function FormDataSender() {
       </div>
 
       <div className="border-t p-4 space-y-2">
-        <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-end w-full">
+        <div className="flex items-end gap-2 w-full">
           <Input
             type="file"
             onChange={(e) => setFile(e.target.files?.[0] || null)}
@@ -165,22 +180,19 @@ export default function FormDataSender() {
             title="צרף קובץ"
           />
           <Textarea
-            rows={1}
+            rows={2}
             placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            className="min-h-[42px] resize-none"
+            className="flex-1 min-h-[40px] resize-y rounded-md"
           />
-          <Button onClick={handleSubmit} disabled={loading} className="min-w-[72px]">
-            {loading ? "⏳" : "שלח"}
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? "⏳ חושב..." : "שלח"}
           </Button>
         </div>
         <div className="flex justify-between">
           {error && <p className="text-red-600 text-sm">❌ {error}</p>}
-          <Button
-            className="text-xs text-gray-500 bg-transparent hover:bg-gray-100"
-            onClick={handleReset}
-          >
+          <Button className="text-xs text-gray-500 bg-transparent hover:bg-gray-100" onClick={handleReset}>
             נקה שיחה 🗑️
           </Button>
         </div>
