@@ -5,6 +5,7 @@ import { Input } from "./ui/input";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import axios from "axios";
+import ChatSidebar from "./ChatSidebar";
 
 interface Message {
   type: "user" | "bot";
@@ -15,25 +16,39 @@ interface Message {
 }
 
 function summarizeMessages(messages: Message[]): string {
-  const chunks = messages.map((msg) => {
-    const imagePart = msg.imageUrl ? `(קובץ: ${msg.imageUrl})` : "";
-    if (msg.type === "user") return `שאלה: ${msg.prompt} ${imagePart}`;
-    if (msg.type === "bot") return `תשובה: ${msg.response}`;
-    return "";
-  });
+  const joined = messages
+    .filter((msg) => msg.type === "user" || msg.type === "bot")
+    .map((msg) =>
+      msg.type === "user"
+        ? `שאלה: ${msg.prompt}`
+        : `תשובה: ${msg.response}`
+    )
+    .join("\n");
+  return joined.length > 3000 ? joined.slice(-3000) : joined;
+}
 
-  const fullText = chunks.join("\n");
-  return fullText.length > 3000 ? fullText.slice(-3000) : fullText;
+function getOrCreateChatId(): string {
+  if (typeof window !== "undefined") {
+    let id = localStorage.getItem("chat_id");
+    if (!id) {
+      id = `chat_${Date.now()}`;
+      localStorage.setItem("chat_id", id);
+    }
+    return id;
+  }
+  return "chat_default";
 }
 
 export default function FormDataSender() {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [lastImage, setLastImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const chatId = getOrCreateChatId();
   const [messages, setMessages] = useState<Message[]>(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("chat_current");
+      const stored = localStorage.getItem(chatId);
       return stored ? JSON.parse(stored) : [];
     }
     return [];
@@ -46,7 +61,7 @@ export default function FormDataSender() {
   };
 
   useEffect(() => {
-    localStorage.setItem("chat_current", JSON.stringify(messages));
+    localStorage.setItem(chatId, JSON.stringify(messages));
     scrollToBottom();
   }, [messages]);
 
@@ -56,7 +71,7 @@ export default function FormDataSender() {
   };
 
   const handleSubmit = async () => {
-    if (!prompt && !file) {
+    if (!prompt && !file && !lastImage) {
       setError("יש להזין טקסט או לבחור קובץ מדיה");
       return;
     }
@@ -65,7 +80,7 @@ export default function FormDataSender() {
     setError("");
 
     try {
-      let imageUrl = "";
+      let imageUrl = lastImage || "";
 
       if (file) {
         const uploadData = new FormData();
@@ -78,10 +93,7 @@ export default function FormDataSender() {
         );
 
         imageUrl = cloudinaryRes.data.secure_url;
-      } else {
-        // שלח את הקובץ האחרון אם יש
-        const lastImage = [...messages].reverse().find((msg) => msg.imageUrl);
-        if (lastImage) imageUrl = lastImage.imageUrl || "";
+        setLastImage(imageUrl);
       }
 
       const formData = new FormData();
@@ -122,7 +134,6 @@ export default function FormDataSender() {
       };
 
       setMessages((prev) => [...prev, newBotMessage]);
-
       setPrompt("");
       setFile(null);
     } catch (e: any) {
@@ -134,79 +145,81 @@ export default function FormDataSender() {
 
   const handleReset = () => {
     setMessages([]);
+    setLastImage(null);
     if (typeof window !== "undefined") {
-      localStorage.removeItem("chat_current");
+      localStorage.removeItem(chatId);
     }
   };
 
   return (
-    <div className="flex flex-col h-[90vh] max-w-3xl mx-auto border rounded shadow bg-white overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg, index) => (
-          <div
-            key={index}
-            className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
-          >
+    <div className="flex h-screen">
+      <ChatSidebar />
+      <div className="flex flex-col flex-1 h-screen max-w-4xl mx-auto border rounded shadow bg-white overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((msg, index) => (
             <div
-              className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
-                msg.type === "user"
-                  ? "bg-green-100 text-right"
-                  : "bg-gray-100 text-left"
-              }`}
+              key={index}
+              className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
             >
-              <div className="text-[10px] text-gray-400 mb-1">
-                {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
+              <div
+                className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
+                  msg.type === "user"
+                    ? "bg-green-100 text-right"
+                    : "bg-gray-100 text-left"
+                }`}
+              >
+                <div className="text-[10px] text-gray-400 mb-1">
+                  {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
+                </div>
+                {msg.imageUrl && (
+                  <img
+                    src={msg.imageUrl}
+                    alt="uploaded"
+                    className="mb-2 max-w-xs rounded"
+                  />
+                )}
+                <p>{msg.type === "user" ? msg.prompt : msg.response}</p>
               </div>
-              {msg.imageUrl && (
-                <img
-                  src={msg.imageUrl}
-                  alt="uploaded"
-                  className="mb-2 max-w-xs rounded"
-                />
-              )}
-              {msg.type === "user" ? <p>{msg.prompt}</p> : <p>{msg.response}</p>}
             </div>
-          </div>
-        ))}
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-100 px-4 py-2 rounded-xl shadow-sm text-sm text-gray-500 animate-pulse">
-              כותב תשובה...
+          ))}
+          {loading && (
+            <div className="flex justify-start">
+              <div className="bg-gray-100 px-4 py-2 rounded-xl shadow-sm text-sm text-gray-500 animate-pulse">
+                כותב תשובה...
+              </div>
             </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
 
-      <div className="border-t p-4 space-y-2">
-        <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-end w-full">
-          <Input
-            type="file"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="w-[36px] p-0 m-0 border-none text-xs file:mr-0"
-            title="צרף קובץ"
-          />
-          <Textarea
-            rows={1}
-            placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            className="min-h-[42px] resize-none"
-          />
-          <Button onClick={handleSubmit} disabled={loading} className="min-w-[72px]">
-            {loading ? "⏳" : "שלח"}
-          </Button>
-        </div>
-        <div className="flex justify-between">
-          {error && <p className="text-red-600 text-sm">❌ {error}</p>}
-          <Button
-            className="text-xs text-gray-500 bg-transparent hover:bg-gray-100"
-            onClick={handleReset}
-          >
-            נקה שיחה 🗑️
-          </Button>
+        <div className="border-t p-4 space-y-2">
+          <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-end w-full">
+            <Input
+              type="file"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="w-[36px] p-0 m-0 border-none text-xs file:mr-0"
+              title="צרף קובץ"
+            />
+            <Textarea
+              rows={1}
+              placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="min-h-[42px] resize-none"
+            />
+            <Button onClick={handleSubmit} disabled={loading} className="min-w-[72px]">
+              {loading ? "⏳" : "שלח"}
+            </Button>
+          </div>
+          <div className="flex justify-between">
+            {error && <p className="text-red-600 text-sm">❌ {error}</p>}
+            <Button
+              className="text-xs text-gray-500 bg-transparent hover:bg-gray-100"
+              onClick={handleReset}
+            >
+              נקה שיחה 🗑️
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    </d
