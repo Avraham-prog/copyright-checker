@@ -126,7 +126,7 @@ export default function FormDataSender() {
       const formData = new FormData();
       formData.append("prompt", prompt);
       if (imageUrl) formData.append("image", imageUrl);
-      formData.append("history", summarizeMessages(messages));
+      formData.append("history", JSON.stringify(messages));
 
       const timestamp = Date.now();
 
