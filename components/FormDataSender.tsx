@@ -1,4 +1,3 @@
-// components/FormDataSender.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -87,6 +86,10 @@ export default function FormDataSender() {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
+  const isValidImageUrl = (url?: string) => {
+    return !!url && url.startsWith("https") && /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+  };
+
   const handleSubmit = async () => {
     if (!prompt && !file) {
       setError("יש להזין טקסט או לבחור קובץ מדיה");
@@ -114,7 +117,7 @@ export default function FormDataSender() {
 
       const formData = new FormData();
       formData.append("prompt", prompt);
-      if (imageUrl) formData.append("image", imageUrl);
+      if (isValidImageUrl(imageUrl)) formData.append("image", imageUrl);
       formData.append(
         "history",
         JSON.stringify(
@@ -123,7 +126,7 @@ export default function FormDataSender() {
               return {
                 type: "user",
                 prompt: msg.prompt,
-                imageUrl: msg.imageUrl || null,
+                imageUrl: isValidImageUrl(msg.imageUrl) ? msg.imageUrl : undefined,
               };
             } else {
               return {
@@ -139,7 +142,7 @@ export default function FormDataSender() {
       const newUserMessage: Message = {
         type: "user",
         prompt,
-        imageUrl: imageUrl || undefined,
+        imageUrl: isValidImageUrl(imageUrl) ? imageUrl : undefined,
         timestamp,
       };
 
