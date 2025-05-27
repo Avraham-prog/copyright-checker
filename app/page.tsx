@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import FormDataSender from "../components/FormDataSender";
+import FormDataSender from "@/components/FormDataSender";
 
 export default function Page() {
   return (
