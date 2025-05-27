@@ -20,18 +20,6 @@ interface ChatThread {
   name: string;
 }
 
-function summarizeMessages(messages: Message[]): string {
-  const joined = messages
-    .filter((msg) => msg.type === "user" || msg.type === "bot")
-    .map((msg) =>
-      msg.type === "user"
-        ? `שאלה: ${msg.prompt}`
-        : `תשובה: ${msg.response}`
-    )
-    .join("\n");
-  return joined.length > 3000 ? joined.slice(-3000) : joined;
-}
-
 export default function FormDataSender() {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -126,10 +114,25 @@ export default function FormDataSender() {
       const formData = new FormData();
       formData.append("prompt", prompt);
       if (imageUrl) formData.append("image", imageUrl);
-      formData.append("history", JSON.stringify(messages));
+      formData.append(
+        "history",
+        JSON.stringify(
+          messages.map((msg) => ({
+            role: msg.type === "user" ? "user" : "assistant",
+            content:
+              msg.type === "user"
+                ? msg.imageUrl
+                  ? [
+                      { type: "text", text: msg.prompt },
+                      { type: "image_url", image_url: { url: msg.imageUrl } }
+                    ]
+                  : msg.prompt
+                : msg.response,
+          }))
+        )
+      );
 
       const timestamp = Date.now();
-
       const newUserMessage: Message = {
         type: "user",
         prompt,
@@ -161,7 +164,6 @@ export default function FormDataSender() {
       };
 
       setMessages((prev) => [...prev, newBotMessage]);
-
       setPrompt("");
       setFile(null);
     } catch (e: any) {
