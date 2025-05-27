@@ -17,7 +17,7 @@ interface Message {
 
 interface ChatThread {
   id: string;
-  title: string;
+  name: string;
 }
 
 function summarizeMessages(messages: Message[]): string {
@@ -45,14 +45,7 @@ export default function FormDataSender() {
     return [];
   });
 
-  const [chats, setChats] = useState<ChatThread[]>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("chat_list");
-      return stored ? JSON.parse(stored) : [];
-    }
-    return [];
-  });
-
+  const [chats, setChats] = useState<ChatThread[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("current_chat_id") || "";
@@ -60,35 +53,10 @@ export default function FormDataSender() {
     return "";
   });
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  const updateChatList = (chatId: string, messages: Message[]) => {
-    const firstPrompt = messages.find((msg) => msg.type === "user")?.prompt;
-    if (!firstPrompt) return;
-    const newTitle = firstPrompt.slice(0, 30);
-    setChats((prev) => {
-      const updated = prev.some((c) => c.id === chatId)
-        ? prev.map((c) => (c.id === chatId ? { ...c, title: newTitle } : c))
-        : [...prev, { id: chatId, title: newTitle }];
-      localStorage.setItem("chat_list", JSON.stringify(updated));
-      return updated;
-    });
-  };
-
-  useEffect(() => {
-    if (currentChatId) {
-      localStorage.setItem(`chat_${currentChatId}`, JSON.stringify(messages));
-      localStorage.setItem("chat_current", JSON.stringify(messages));
-      updateChatList(currentChatId, messages);
-    }
-    scrollToBottom();
-  }, [messages]);
-
   const handleNewChat = () => {
     const newId = Date.now().toString();
+    const newChat = { id: newId, name: `שיחה חדשה ${chats.length + 1}` };
+    setChats((prev) => [...prev, newChat]);
     setCurrentChatId(newId);
     setMessages([]);
     localStorage.setItem("chat_current", JSON.stringify([]));
@@ -99,15 +67,10 @@ export default function FormDataSender() {
     setCurrentChatId(id);
     const stored = localStorage.getItem(`chat_${id}`);
     setMessages(stored ? JSON.parse(stored) : []);
-    localStorage.setItem("current_chat_id", id);
   };
 
   const handleDeleteChat = (id: string) => {
-    setChats((prev) => {
-      const updated = prev.filter((c) => c.id !== id);
-      localStorage.setItem("chat_list", JSON.stringify(updated));
-      return updated;
-    });
+    setChats((prev) => prev.filter((c) => c.id !== id));
     localStorage.removeItem(`chat_${id}`);
     if (currentChatId === id) {
       setMessages([]);
@@ -116,6 +79,19 @@ export default function FormDataSender() {
       localStorage.removeItem("current_chat_id");
     }
   };
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    if (currentChatId) {
+      localStorage.setItem(`chat_${currentChatId}`, JSON.stringify(messages));
+      localStorage.setItem("chat_current", JSON.stringify(messages));
+    }
+    scrollToBottom();
+  }, [messages]);
 
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -161,8 +137,7 @@ export default function FormDataSender() {
         timestamp,
       };
 
-      const updatedMessages = [...messages, newUserMessage];
-      setMessages(updatedMessages);
+      setMessages((prev) => [...prev, newUserMessage]);
 
       const res = await fetch(
         process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "",
@@ -186,6 +161,7 @@ export default function FormDataSender() {
       };
 
       setMessages((prev) => [...prev, newBotMessage]);
+
       setPrompt("");
       setFile(null);
     } catch (e: any) {
