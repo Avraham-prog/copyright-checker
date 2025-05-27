@@ -15,6 +15,11 @@ interface Message {
   timestamp: number;
 }
 
+interface ChatThread {
+  id: string;
+  name: string;
+}
+
 function summarizeMessages(messages: Message[]): string {
   const joined = messages
     .filter((msg) => msg.type === "user" || msg.type === "bot")
@@ -40,14 +45,51 @@ export default function FormDataSender() {
     return [];
   });
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [chats, setChats] = useState<ChatThread[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("current_chat_id") || "";
+    }
+    return "";
+  });
 
+  const handleNewChat = () => {
+    const newId = Date.now().toString();
+    const newChat = { id: newId, name: `שיחה חדשה ${chats.length + 1}` };
+    setChats((prev) => [...prev, newChat]);
+    setCurrentChatId(newId);
+    setMessages([]);
+    localStorage.setItem("chat_current", JSON.stringify([]));
+    localStorage.setItem("current_chat_id", newId);
+  };
+
+  const handleSelectChat = (id: string) => {
+    setCurrentChatId(id);
+    const stored = localStorage.getItem(`chat_${id}`);
+    setMessages(stored ? JSON.parse(stored) : []);
+  };
+
+  const handleDeleteChat = (id: string) => {
+    setChats((prev) => prev.filter((c) => c.id !== id));
+    localStorage.removeItem(`chat_${id}`);
+    if (currentChatId === id) {
+      setMessages([]);
+      setCurrentChatId("");
+      localStorage.removeItem("chat_current");
+      localStorage.removeItem("current_chat_id");
+    }
+  };
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
-    localStorage.setItem("chat_current", JSON.stringify(messages));
+    if (currentChatId) {
+      localStorage.setItem(`chat_${currentChatId}`, JSON.stringify(messages));
+      localStorage.setItem("chat_current", JSON.stringify(messages));
+    }
     scrollToBottom();
   }, [messages]);
 
@@ -139,12 +181,12 @@ export default function FormDataSender() {
   return (
     <div className="flex h-screen">
       <ChatSidebar
-  chats={chats}
-  currentChatId={currentChatId}
-  onSelect={handleSelectChat}
-  onDelete={handleDeleteChat}
-  onNewChat={handleNewChat}
-/>
+        chats={chats}
+        currentChatId={currentChatId}
+        onSelect={handleSelectChat}
+        onDelete={handleDeleteChat}
+        onNewChat={handleNewChat}
+      />
       <div className="flex flex-col flex-1 h-screen max-w-4xl mx-auto border rounded shadow bg-white overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((msg, index) => (
