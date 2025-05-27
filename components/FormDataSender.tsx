@@ -1,3 +1,4 @@
+// components/FormDataSender.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -117,18 +118,20 @@ export default function FormDataSender() {
       formData.append(
         "history",
         JSON.stringify(
-          messages.map((msg) => ({
-            role: msg.type === "user" ? "user" : "assistant",
-            content:
-              msg.type === "user"
-                ? msg.imageUrl
-                  ? [
-                      { type: "text", text: msg.prompt },
-                      { type: "image_url", image_url: { url: msg.imageUrl } }
-                    ]
-                  : msg.prompt
-                : msg.response,
-          }))
+          messages.map((msg) => {
+            if (msg.type === "user") {
+              return {
+                type: "user",
+                prompt: msg.prompt,
+                imageUrl: msg.imageUrl || null,
+              };
+            } else {
+              return {
+                type: "bot",
+                response: msg.response,
+              };
+            }
+          })
         )
       );
 
