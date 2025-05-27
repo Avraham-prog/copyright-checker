@@ -5,7 +5,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 
 interface ChatSidebarProps {
-  chats: { id: string; title: string }[];
+  chats: { id: string; name: string }[];
   currentChatId: string | null;
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
@@ -34,7 +34,7 @@ export default function ChatSidebar({
             }`}
           >
             <span onClick={() => onSelect(chat.id)} className="truncate flex-1">
-              {chat.title || "שיחה ללא כותרת"}
+              {chat.name || "שיחה ללא כותרת"}
             </span>
             <Button
               variant="ghost"
