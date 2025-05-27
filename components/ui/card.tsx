@@ -1,22 +1,31 @@
-import React from "react";
+import * as React from "react"
+import { cn } from "@/lib/utils"
 
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
-}
+interface CardProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export function Card({ children, className = "" }: CardProps) {
+const Card = React.forwardRef<HTMLDivElement, CardProps>(({ className, ...props }, ref) => {
   return (
-    <div className={`rounded-xl border bg-white shadow p-4 ${className}`}>
-      {children}
-    </div>
-  );
-}
+    <div
+      ref={ref}
+      className={cn(
+        "rounded-2xl border bg-white shadow-sm p-4",
+        className
+      )}
+      {...props}
+    />
+  )
+})
+Card.displayName = "Card"
 
-export function CardContent({ children, className = "" }: CardProps) {
+const CardContent = React.forwardRef<HTMLDivElement, CardProps>(({ className, ...props }, ref) => {
   return (
-    <div className={`mt-2 ${className}`}>
-      {children}
-    </div>
-  );
-}
+    <div
+      ref={ref}
+      className={cn("pt-2", className)}
+      {...props}
+    />
+  )
+})
+CardContent.displayName = "CardContent"
+
+export { Card, CardContent }
