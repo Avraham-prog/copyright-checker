@@ -26,6 +26,13 @@ const fetchImageAsBase64 = async (url) => {
   }
 };
 
+const messageHasImage = (messages) => {
+  return messages.some((msg) =>
+    Array.isArray(msg.content) &&
+    msg.content.some((item) => item.type === "image_url")
+  );
+};
+
 router.post("/", (req, res) => {
   const form = new IncomingForm({ multiples: false });
 
@@ -65,7 +72,6 @@ router.post("/", (req, res) => {
 אם לא ניתן לחוות דעה משפטית, הסבר מדוע ואילו פרטים חסרים.`
       });
 
-      // טיפול בהיסטוריה
       if (historyRaw) {
         try {
           const history = JSON.parse(historyRaw);
@@ -93,7 +99,6 @@ router.post("/", (req, res) => {
         }
       }
 
-      // טיפול בהודעה הנוכחית
       const contentArray = [];
 
       if (prompt) {
@@ -111,7 +116,6 @@ router.post("/", (req, res) => {
         messages.push({ role: "user", content: contentArray });
       }
 
-      // ניקוי קצה: מוודא שאין תמונות ריקות
       messages.forEach((msg) => {
         if (Array.isArray(msg.content)) {
           msg.content = msg.content.filter((item) => {
@@ -132,9 +136,8 @@ router.post("/", (req, res) => {
       console.log("📤 messages שנשלחות ל־OpenAI:");
       console.dir(messages, { depth: null });
 
-      // החלטה אם יש תמונה בכלל
-      const hasImageInRequest = !!image || (historyRaw && historyRaw.includes("imageUrl"));
-      const useGpt4o = hasImageInRequest;
+      const useGpt4o = messageHasImage(messages);
+      console.log("==> Model selected:", useGpt4o ? "gpt-4o" : "gpt-4");
 
       const response = await openai.chat.completions.create({
         model: useGpt4o ? "gpt-4o" : "gpt-4",
