@@ -20,6 +20,23 @@ interface ChatThread {
   name: string;
 }
 
+// פונקציית טעינה בטוחה מה־localStorage
+const safeParse = (data: string | null): Message[] => {
+  try {
+    const parsed = JSON.parse(data || "[]");
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (msg) =>
+        msg &&
+        typeof msg.type === "string" &&
+        (msg.type === "user" || msg.type === "bot") &&
+        typeof msg.timestamp === "number"
+    );
+  } catch {
+    return [];
+  }
+};
+
 export default function FormDataSender() {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -28,7 +45,7 @@ export default function FormDataSender() {
   const [messages, setMessages] = useState<Message[]>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("chat_current");
-      return stored ? JSON.parse(stored) : [];
+      return safeParse(stored);
     }
     return [];
   });
@@ -54,7 +71,7 @@ export default function FormDataSender() {
   const handleSelectChat = (id: string) => {
     setCurrentChatId(id);
     const stored = localStorage.getItem(`chat_${id}`);
-    setMessages(stored ? JSON.parse(stored) : []);
+    setMessages(safeParse(stored));
   };
 
   const handleDeleteChat = (id: string) => {
@@ -197,27 +214,16 @@ export default function FormDataSender() {
       />
       <div className="flex flex-col flex-1 h-screen max-w-4xl mx-auto border rounded shadow bg-white overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
-                  msg.type === "user"
-                    ? "bg-green-100 text-right"
-                    : "bg-gray-100 text-left"
-                }`}
-              >
+          {messages?.map((msg, index) => (
+            <div key={index} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
+              <div className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
+                  msg.type === "user" ? "bg-green-100 text-right" : "bg-gray-100 text-left"
+                }`}>
                 <div className="text-[10px] text-gray-400 mb-1">
                   {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
                 </div>
                 {msg.imageUrl && (
-                  <img
-                    src={msg.imageUrl}
-                    alt="uploaded"
-                    className="mb-2 max-w-xs rounded"
-                  />
+                  <img src={msg.imageUrl} alt="uploaded" className="mb-2 max-w-xs rounded" />
                 )}
                 {msg.type === "user" ? <p>{msg.prompt}</p> : <p>{msg.response}</p>}
               </div>
@@ -254,10 +260,7 @@ export default function FormDataSender() {
           </div>
           <div className="flex justify-between">
             {error && <p className="text-red-600 text-sm">❌ {error}</p>}
-            <Button
-              className="text-xs text-gray-500 bg-transparent hover:bg-gray-100"
-              onClick={handleReset}
-            >
+            <Button className="text-xs text-gray-500 bg-transparent hover:bg-gray-100" onClick={handleReset}>
               נקה שיחה 🗑️
             </Button>
           </div>
