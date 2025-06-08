@@ -18,8 +18,9 @@ app.post("/legal-assistant", (req, res) => {
       return res.status(500).json({ error: "Failed to parse form" });
     }
 
-    const prompt = fields.prompt?.[0] || "";
-    const file = files.file?.[0];
+    // With multiples: false, values are single items, not arrays
+    const prompt = fields.prompt || "";
+    const file = files.file;
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
