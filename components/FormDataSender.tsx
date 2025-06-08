@@ -115,25 +115,13 @@ export default function FormDataSender() {
         imageUrl = cloudinaryRes.data.secure_url;
       }
 
-      const timestamp = Date.now();
-      const newUserMessage: Message = {
-        type: "user",
-        prompt,
-        imageUrl: isValidImageUrl(imageUrl) ? imageUrl : undefined,
-        timestamp,
-      };
-
-      // כאן אנחנו קודם מוסיפים את ההודעה החדשה להיסטוריה
-      const updatedMessages = [...messages, newUserMessage];
-      setMessages(updatedMessages);
-
       const formData = new FormData();
       formData.append("prompt", prompt);
       if (isValidImageUrl(imageUrl)) formData.append("image", imageUrl);
       formData.append(
         "history",
         JSON.stringify(
-          updatedMessages.map((msg) => {
+          messages.map((msg) => {
             if (msg.type === "user") {
               return {
                 type: "user",
@@ -149,6 +137,16 @@ export default function FormDataSender() {
           })
         )
       );
+
+      const timestamp = Date.now();
+      const newUserMessage: Message = {
+        type: "user",
+        prompt,
+        imageUrl: isValidImageUrl(imageUrl) ? imageUrl : undefined,
+        timestamp,
+      };
+
+      setMessages((prev) => [...prev, newUserMessage]);
 
       const res = await fetch(
         process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "",
@@ -189,7 +187,7 @@ export default function FormDataSender() {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex flex-col min-h-screen">
       <ChatSidebar
         chats={chats}
         currentChatId={currentChatId}
@@ -197,15 +195,30 @@ export default function FormDataSender() {
         onDelete={handleDeleteChat}
         onNewChat={handleNewChat}
       />
-      <div className="flex flex-col flex-1 h-screen max-w-4xl mx-auto border rounded shadow bg-white overflow-hidden">
+      <div className="flex flex-col flex-1 max-w-4xl mx-auto border rounded shadow bg-white overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((msg, index) => (
-            <div key={index} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${msg.type === "user" ? "bg-green-100 text-right" : "bg-gray-100 text-left"}`}>
+            <div
+              key={index}
+              className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div
+                className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
+                  msg.type === "user"
+                    ? "bg-green-100 text-right"
+                    : "bg-gray-100 text-left"
+                }`}
+              >
                 <div className="text-[10px] text-gray-400 mb-1">
                   {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
                 </div>
-                {msg.imageUrl && <img src={msg.imageUrl} alt="uploaded" className="mb-2 max-w-xs rounded" />}
+                {msg.imageUrl && (
+                  <img
+                    src={msg.imageUrl}
+                    alt="uploaded"
+                    className="mb-2 max-w-xs rounded"
+                  />
+                )}
                 {msg.type === "user" ? <p>{msg.prompt}</p> : <p>{msg.response}</p>}
               </div>
             </div>
@@ -221,16 +234,30 @@ export default function FormDataSender() {
         </div>
 
         <div className="border-t p-4 space-y-2">
-          <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-end w-full">
-            <Input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="w-[36px] p-0 m-0 border-none text-xs file:mr-0" title="צרף קובץ" />
-            <Textarea rows={1} placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ" value={prompt} onChange={(e) => setPrompt(e.target.value)} className="min-h-[42px] resize-none" />
+          <div className="flex gap-2 items-end w-full">
+            <Input
+              type="file"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="w-[36px] p-0 m-0 border-none text-xs file:mr-0"
+              title="צרף קובץ"
+            />
+            <Textarea
+              rows={1}
+              placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              className="min-h-[42px] resize-none flex-grow"
+            />
             <Button onClick={handleSubmit} disabled={loading} className="min-w-[72px]">
               {loading ? "⏳" : "שלח"}
             </Button>
           </div>
           <div className="flex justify-between">
             {error && <p className="text-red-600 text-sm">❌ {error}</p>}
-            <Button className="text-xs text-gray-500 bg-transparent hover:bg-gray-100" onClick={handleReset}>
+            <Button
+              className="text-xs text-gray-500 bg-transparent hover:bg-gray-100"
+              onClick={handleReset}
+            >
               נקה שיחה 🗑️
             </Button>
           </div>
