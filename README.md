@@ -1,9 +1,3 @@
-diff --git a/README.md b/README.md
-index 6a5051e663e41d0e93e2adb997c4645c0f7c1a5c..3ae11c5b54147fa85e2fee6e0458e388a922e072 100644
---- a/README.md
- b/README.md
-@@ -1 1,51 @@
--# copyright-checker
 # Copyright Checker
 
 ## Overview
