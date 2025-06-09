@@ -2,7 +2,6 @@
 
 import React from "react";
 import FormDataSender from "@/components/FormDataSender";
-import AnalyzeImageUploader from "@/components/AnalyzeImageUploader";
 
 export default function Page() {
   return (
