@@ -26,7 +26,7 @@ const AnalyzeImageUploader = () => {
       setResult('');
 
       const response = await axios.post(
-        'https://legal-analysis-api-i7ne.onrender.com',
+        'https://legal-analysis-api-i7ne.onrender.com/api/analyze-image',
         formData,
         {
           headers: {
