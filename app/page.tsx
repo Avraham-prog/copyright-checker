@@ -2,6 +2,7 @@
 
 import React from "react";
 import FormDataSender from "@/components/FormDataSender";
+import AnalyzeImageUploader from "@/components/AnalyzeImageUploader";
 
 export default function Page() {
   return (
@@ -10,6 +11,11 @@ export default function Page() {
         📜 עורך הדין הווירטואלי - בדיקת זכויות יוצרים
       </h1>
       <FormDataSender />
+
+      <div className="mt-12">
+        <h2 className="text-xl font-semibold mb-4 text-center">🔎 ניתוח תמונה עצמאי</h2>
+        <AnalyzeImageUploader />
+      </div>
     </main>
   );
 }
