@@ -176,6 +176,7 @@ export default function FormDataSender() {
       setMessages((prev) => [...prev, newBotMessage]);
       setPrompt("");
       setFile(null);
+      setImageUrl("");
     } catch (e: any) {
       setError(e.message || "אירעה שגיאה בשליחה");
     } finally {
