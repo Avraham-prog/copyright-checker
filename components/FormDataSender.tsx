@@ -39,6 +39,7 @@ const safeParse = (data: string | null): Message[] => {
 export default function FormDataSender() {
   const [prompt, setPrompt] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [chats, setChats] = useState<ChatThread[]>(() => {
@@ -140,7 +141,7 @@ export default function FormDataSender() {
     setError("");
 
     try {
-      let imageUrl = "";
+      let newImageUrl = "";
 
       if (file) {
         const uploadData = new FormData();
@@ -152,27 +153,25 @@ export default function FormDataSender() {
           uploadData
         );
 
-        imageUrl = cloudinaryRes.data.secure_url;
+        newImageUrl = cloudinaryRes.data.secure_url;
+        setImageUrl(newImageUrl); // נשמר לשאלות המשך
       }
 
-      const lastImageUrl = messages
-        .slice()
-        .reverse()
-        .find((msg) => msg.type === "user" && isValidImageUrl(msg.imageUrl))?.imageUrl;
-
-      const effectiveImageUrl = isValidImageUrl(imageUrl) ? imageUrl : lastImageUrl;
+      const lastImageUrl = newImageUrl || imageUrl;
 
       const timestamp = Date.now();
       const newUserMessage: Message = {
         type: "user",
         prompt,
-        imageUrl: effectiveImageUrl,
+        imageUrl: isValidImageUrl(lastImageUrl) ? lastImageUrl : undefined,
         timestamp,
       };
 
       const formData = new FormData();
       formData.append("prompt", prompt);
-      if (isValidImageUrl(effectiveImageUrl)) formData.append("image", effectiveImageUrl);
+      if (newImageUrl) {
+        formData.append("image", newImageUrl);
+      }
       formData.append(
         "history",
         JSON.stringify(
@@ -228,6 +227,7 @@ export default function FormDataSender() {
 
   const handleReset = () => {
     setMessages([]);
+    setImageUrl("");
     if (typeof window !== "undefined") {
       localStorage.removeItem("chat_current");
     }
