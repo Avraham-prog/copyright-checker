@@ -155,9 +155,24 @@ export default function FormDataSender() {
         imageUrl = cloudinaryRes.data.secure_url;
       }
 
+      const lastImageUrl = messages
+        .slice()
+        .reverse()
+        .find((msg) => msg.type === "user" && isValidImageUrl(msg.imageUrl))?.imageUrl;
+
+      const effectiveImageUrl = isValidImageUrl(imageUrl) ? imageUrl : lastImageUrl;
+
+      const timestamp = Date.now();
+      const newUserMessage: Message = {
+        type: "user",
+        prompt,
+        imageUrl: effectiveImageUrl,
+        timestamp,
+      };
+
       const formData = new FormData();
       formData.append("prompt", prompt);
-      if (isValidImageUrl(imageUrl)) formData.append("image", imageUrl);
+      if (isValidImageUrl(effectiveImageUrl)) formData.append("image", effectiveImageUrl);
       formData.append(
         "history",
         JSON.stringify(
@@ -177,14 +192,6 @@ export default function FormDataSender() {
           })
         )
       );
-
-      const timestamp = Date.now();
-      const newUserMessage: Message = {
-        type: "user",
-        prompt,
-        imageUrl: isValidImageUrl(imageUrl) ? imageUrl : undefined,
-        timestamp,
-      };
 
       setMessages((prev) => [...prev, newUserMessage]);
 
