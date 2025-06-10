@@ -1,3 +1,4 @@
+// ✅ legal-assistant.js (Express backend) – גרסה מתוקנת עם טיפול בתמונה מהיסטוריה
 const express = require("express");
 const router = express.Router();
 const { IncomingForm } = require("formidable");
@@ -72,6 +73,8 @@ router.post("/", (req, res) => {
 אם לא ניתן לחוות דעה משפטית, הסבר מדוע ואילו פרטים חסרים.`
       });
 
+      let lastImageUrl = null;
+
       if (historyRaw) {
         try {
           const history = JSON.parse(historyRaw);
@@ -82,6 +85,7 @@ router.post("/", (req, res) => {
                 content.push({ type: "text", text: msg.prompt });
               }
               if (isValidImageUrl(msg.imageUrl)) {
+                lastImageUrl = msg.imageUrl; // נשמר גם אם לא מצורף מחדש
                 const base64Image = await fetchImageAsBase64(msg.imageUrl);
                 if (base64Image) {
                   content.push({ type: "image_url", image_url: { url: base64Image } });
@@ -105,8 +109,16 @@ router.post("/", (req, res) => {
         contentArray.push({ type: "text", text: String(prompt) });
       }
 
+      let finalImageUrl = null;
+
       if (isValidImageUrl(image)) {
-        const base64Image = await fetchImageAsBase64(image);
+        finalImageUrl = image;
+      } else if (isValidImageUrl(lastImageUrl)) {
+        finalImageUrl = lastImageUrl;
+      }
+
+      if (finalImageUrl) {
+        const base64Image = await fetchImageAsBase64(finalImageUrl);
         if (base64Image) {
           contentArray.push({ type: "image_url", image_url: { url: base64Image } });
         }
