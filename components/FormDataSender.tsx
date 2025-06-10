@@ -42,6 +42,8 @@ export default function FormDataSender() {
   const [imageUrl, setImageUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [chats, setChats] = useState<ChatThread[]>(() => {
     if (typeof window !== "undefined") {
       const allKeys = Object.keys(localStorage);
@@ -177,6 +179,9 @@ export default function FormDataSender() {
       setPrompt("");
       setFile(null);
       setImageUrl("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (e: any) {
       setError(e.message || "אירעה שגיאה בשליחה");
     } finally {
@@ -275,6 +280,7 @@ export default function FormDataSender() {
           <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-end w-full">
             <Input
               type="file"
+              ref={fileInputRef}
               onChange={(e) => setFile(e.target.files?.[0] || null)}
               className="w-[36px] p-0 m-0 border-none text-xs file:mr-0"
               title="צרף קובץ"
