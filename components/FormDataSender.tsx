@@ -201,6 +201,7 @@ export default function FormDataSender() {
         onSelect={handleSelectChat}
         onDelete={handleDeleteChat}
         onNewChat={handleNewChat}
+        onRename={handleRenameChat}
       />
       <div className="flex flex-col flex-1 h-screen max-w-4xl mx-auto border rounded shadow bg-white overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
