@@ -70,45 +70,6 @@ export default function FormDataSender() {
     return [];
   });
 
-  const handleNewChat = () => {
-    const newId = Date.now().toString();
-    const newName = `שיחה חדשה ${chats.length + 1}`;
-    const newChat = { id: newId, name: newName };
-    setChats((prev) => [...prev, newChat]);
-    setCurrentChatId(newId);
-    setMessages([]);
-    localStorage.setItem("chat_current", JSON.stringify([]));
-    localStorage.setItem("current_chat_id", newId);
-    localStorage.setItem(`chat_${newId}_name`, newName);
-  };
-
-  const handleSelectChat = (id: string) => {
-    setCurrentChatId(id);
-    const stored = localStorage.getItem(`chat_${id}`);
-    setMessages(safeParse(stored));
-  };
-
-  const handleDeleteChat = (id: string) => {
-    setChats((prev) => prev.filter((c) => c.id !== id));
-    localStorage.removeItem(`chat_${id}`);
-    localStorage.removeItem(`chat_${id}_name`);
-    if (currentChatId === id) {
-      setMessages([]);
-      setCurrentChatId("");
-      localStorage.removeItem("chat_current");
-      localStorage.removeItem("current_chat_id");
-    }
-  };
-
-  const handleRenameChat = (id: string, newName: string) => {
-    setChats((prevChats) =>
-      prevChats.map((chat) =>
-        chat.id === id ? { ...chat, name: newName } : chat
-      )
-    );
-    localStorage.setItem(`chat_${id}_name`, newName);
-  };
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -121,11 +82,6 @@ export default function FormDataSender() {
     }
     scrollToBottom();
   }, [messages]);
-
-  const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  };
 
   const isValidImageUrl = (url?: string) => {
     return !!url && url.startsWith("https") && /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
@@ -141,7 +97,7 @@ export default function FormDataSender() {
     setError("");
 
     try {
-      let newImageUrl = "";
+      let finalImageUrl = imageUrl;
 
       if (file) {
         const uploadData = new FormData();
@@ -153,24 +109,24 @@ export default function FormDataSender() {
           uploadData
         );
 
-        newImageUrl = cloudinaryRes.data.secure_url;
-        setImageUrl(newImageUrl); // נשמר לשאלות המשך
-      }
+        console.log("📤 Cloudinary response:", cloudinaryRes.data);
 
-      const lastImageUrl = newImageUrl || imageUrl;
+        finalImageUrl = cloudinaryRes.data.secure_url;
+        setImageUrl(finalImageUrl);
+      }
 
       const timestamp = Date.now();
       const newUserMessage: Message = {
         type: "user",
         prompt,
-        imageUrl: isValidImageUrl(lastImageUrl) ? lastImageUrl : undefined,
+        imageUrl: isValidImageUrl(finalImageUrl) ? finalImageUrl : undefined,
         timestamp,
       };
 
       const formData = new FormData();
       formData.append("prompt", prompt);
-      if (newImageUrl) {
-        formData.append("image", newImageUrl);
+      if (isValidImageUrl(finalImageUrl)) {
+        formData.append("image", finalImageUrl);
       }
       formData.append(
         "history",
@@ -191,6 +147,8 @@ export default function FormDataSender() {
           })
         )
       );
+
+      console.log("📨 Sending formData with image:", finalImageUrl);
 
       setMessages((prev) => [...prev, newUserMessage]);
 
@@ -228,9 +186,53 @@ export default function FormDataSender() {
   const handleReset = () => {
     setMessages([]);
     setImageUrl("");
-    if (typeof window !== "undefined") {
+    localStorage.removeItem("chat_current");
+  };
+
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
+  const handleNewChat = () => {
+    const newId = Date.now().toString();
+    const newName = `שיחה חדשה ${chats.length + 1}`;
+    const newChat = { id: newId, name: newName };
+    setChats((prev) => [...prev, newChat]);
+    setCurrentChatId(newId);
+    setMessages([]);
+    setImageUrl("");
+    localStorage.setItem("chat_current", JSON.stringify([]));
+    localStorage.setItem("current_chat_id", newId);
+    localStorage.setItem(`chat_${newId}_name`, newName);
+  };
+
+  const handleSelectChat = (id: string) => {
+    setCurrentChatId(id);
+    const stored = localStorage.getItem(`chat_${id}`);
+    setMessages(safeParse(stored));
+  };
+
+  const handleDeleteChat = (id: string) => {
+    setChats((prev) => prev.filter((c) => c.id !== id));
+    localStorage.removeItem(`chat_${id}`);
+    localStorage.removeItem(`chat_${id}_name`);
+    if (currentChatId === id) {
+      setMessages([]);
+      setCurrentChatId("");
+      setImageUrl("");
       localStorage.removeItem("chat_current");
+      localStorage.removeItem("current_chat_id");
     }
+  };
+
+  const handleRenameChat = (id: string, newName: string) => {
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat.id === id ? { ...chat, name: newName } : chat
+      )
+    );
+    localStorage.setItem(`chat_${id}_name`, newName);
   };
 
   return (
@@ -245,18 +247,16 @@ export default function FormDataSender() {
       />
       <div className="flex flex-col flex-1 h-screen max-w-4xl mx-auto border rounded shadow bg-white overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages?.map((msg, index) => (
+          {messages.map((msg, index) => (
             <div key={index} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
-                  msg.type === "user" ? "bg-green-100 text-right" : "bg-gray-100 text-left"
-                }`}>
+              <div className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${msg.type === "user" ? "bg-green-100 text-right" : "bg-gray-100 text-left"}`}>
                 <div className="text-[10px] text-gray-400 mb-1">
                   {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
                 </div>
                 {msg.imageUrl && (
                   <img src={msg.imageUrl} alt="uploaded" className="mb-2 max-w-xs rounded" />
                 )}
-                {msg.type === "user" ? <p>{msg.prompt}</p> : <p>{msg.response}</p>}
+                <p>{msg.type === "user" ? msg.prompt : msg.response}</p>
               </div>
             </div>
           ))}
