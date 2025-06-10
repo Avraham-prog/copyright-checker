@@ -41,6 +41,26 @@ export default function FormDataSender() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [chats, setChats] = useState<ChatThread[]>(() => {
+    if (typeof window !== "undefined") {
+      const allKeys = Object.keys(localStorage);
+      const chatKeys = allKeys.filter((key) => key.startsWith("chat_") && !key.includes("_name") && !key.includes("current"));
+      return chatKeys.map((key) => {
+        const id = key.replace("chat_", "");
+        const name = localStorage.getItem(`chat_${id}_name`) || `שיחה ללא שם`;
+        return { id, name };
+      });
+    }
+    return [];
+  });
+
+  const [currentChatId, setCurrentChatId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("current_chat_id") || "";
+    }
+    return "";
+  });
+
   const [messages, setMessages] = useState<Message[]>(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("chat_current");
@@ -49,22 +69,16 @@ export default function FormDataSender() {
     return [];
   });
 
-  const [chats, setChats] = useState<ChatThread[]>([]);
-  const [currentChatId, setCurrentChatId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("current_chat_id") || "";
-    }
-    return "";
-  });
-
   const handleNewChat = () => {
     const newId = Date.now().toString();
-    const newChat = { id: newId, name: `שיחה חדשה ${chats.length + 1}` };
+    const newName = `שיחה חדשה ${chats.length + 1}`;
+    const newChat = { id: newId, name: newName };
     setChats((prev) => [...prev, newChat]);
     setCurrentChatId(newId);
     setMessages([]);
     localStorage.setItem("chat_current", JSON.stringify([]));
     localStorage.setItem("current_chat_id", newId);
+    localStorage.setItem(`chat_${newId}_name`, newName);
   };
 
   const handleSelectChat = (id: string) => {
@@ -76,12 +90,22 @@ export default function FormDataSender() {
   const handleDeleteChat = (id: string) => {
     setChats((prev) => prev.filter((c) => c.id !== id));
     localStorage.removeItem(`chat_${id}`);
+    localStorage.removeItem(`chat_${id}_name`);
     if (currentChatId === id) {
       setMessages([]);
       setCurrentChatId("");
       localStorage.removeItem("chat_current");
       localStorage.removeItem("current_chat_id");
     }
+  };
+
+  const handleRenameChat = (id: string, newName: string) => {
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat.id === id ? { ...chat, name: newName } : chat
+      )
+    );
+    localStorage.setItem(`chat_${id}_name`, newName);
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -106,12 +130,6 @@ export default function FormDataSender() {
     return !!url && url.startsWith("https") && /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
   };
 
-  const convertImageUrlToBase64 = async (url: string): Promise<string> => {
-    const res = await axios.get(url, { responseType: "arraybuffer" });
-    const base64 = Buffer.from(res.data, "binary").toString("base64");
-    return `data:image/jpeg;base64,${base64}`;
-  };
-
   const handleSubmit = async () => {
     if (!prompt && !file) {
       setError("יש להזין טקסט או לבחור קובץ מדיה");
@@ -123,7 +141,6 @@ export default function FormDataSender() {
 
     try {
       let imageUrl = "";
-      let base64Image = "";
 
       if (file) {
         const uploadData = new FormData();
@@ -136,21 +153,30 @@ export default function FormDataSender() {
         );
 
         imageUrl = cloudinaryRes.data.secure_url;
-        base64Image = await convertImageUrlToBase64(imageUrl);
       }
 
-      const history = messages.map((msg) => ({
-        type: msg.type,
-        prompt: msg.prompt,
-        response: msg.response,
-        imageUrl: msg.imageUrl,
-      }));
-
-      const payload = {
-        prompt: prompt,
-        image: base64Image || null,
-        history: JSON.stringify(history),
-      };
+      const formData = new FormData();
+      formData.append("prompt", prompt);
+      if (isValidImageUrl(imageUrl)) formData.append("image", imageUrl);
+      formData.append(
+        "history",
+        JSON.stringify(
+          messages.map((msg) => {
+            if (msg.type === "user") {
+              return {
+                type: "user",
+                prompt: msg.prompt,
+                imageUrl: isValidImageUrl(msg.imageUrl) ? msg.imageUrl : undefined,
+              };
+            } else {
+              return {
+                type: "bot",
+                response: msg.response,
+              };
+            }
+          })
+        )
+      );
 
       const timestamp = Date.now();
       const newUserMessage: Message = {
@@ -162,12 +188,19 @@ export default function FormDataSender() {
 
       setMessages((prev) => [...prev, newUserMessage]);
 
-      const res = await axios.post(
+      const res = await fetch(
         process.env.NEXT_PUBLIC_LEGAL_ANALYSIS_API_URL || "",
-        payload
+        {
+          method: "POST",
+          body: formData,
+        }
       );
 
-      const data = res.data;
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "שגיאה לא ידועה בשרת");
+      }
 
       const newBotMessage: Message = {
         type: "bot",
@@ -200,14 +233,16 @@ export default function FormDataSender() {
         currentChatId={currentChatId}
         onSelect={handleSelectChat}
         onDelete={handleDeleteChat}
-        onNewChat={handleNewChat}
         onRename={handleRenameChat}
+        onNewChat={handleNewChat}
       />
       <div className="flex flex-col flex-1 h-screen max-w-4xl mx-auto border rounded shadow bg-white overflow-hidden">
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages?.map((msg, index) => (
             <div key={index} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${msg.type === "user" ? "bg-green-100 text-right" : "bg-gray-100 text-left"}`}>
+              <div className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
+                  msg.type === "user" ? "bg-green-100 text-right" : "bg-gray-100 text-left"
+                }`}>
                 <div className="text-[10px] text-gray-400 mb-1">
                   {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
                 </div>
