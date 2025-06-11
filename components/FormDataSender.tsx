@@ -109,8 +109,6 @@ export default function FormDataSender() {
           uploadData
         );
 
-        console.log("📤 Cloudinary response:", cloudinaryRes.data);
-
         finalImageUrl = cloudinaryRes.data.secure_url;
         setImageUrl(finalImageUrl);
       }
@@ -147,8 +145,6 @@ export default function FormDataSender() {
           })
         )
       );
-
-      console.log("📨 Sending formData with image:", finalImageUrl);
 
       setMessages((prev) => [...prev, newUserMessage]);
 
@@ -237,64 +233,67 @@ export default function FormDataSender() {
   };
 
   return (
-    <div className="flex h-screen flex-col sm:flex-row">
-      <ChatSidebar
-        chats={chats}
-        currentChatId={currentChatId}
-        onSelect={handleSelectChat}
-        onDelete={handleDeleteChat}
-        onRename={handleRenameChat}
-        onNewChat={handleNewChat}
-      />
-      <div className="flex flex-col flex-1 h-screen max-w-4xl mx-auto border rounded shadow bg-white overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((msg, index) => (
-            <div key={index} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${msg.type === "user" ? "bg-green-100 text-right" : "bg-gray-100 text-left"}`}>
-                <div className="text-[10px] text-gray-400 mb-1">
-                  {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
+    <div className="flex flex-col h-screen">
+      <div className="flex flex-1 overflow-hidden">
+        <ChatSidebar
+          chats={chats}
+          currentChatId={currentChatId}
+          onSelect={handleSelectChat}
+          onDelete={handleDeleteChat}
+          onRename={handleRenameChat}
+          onNewChat={handleNewChat}
+        />
+        <div className="flex flex-col flex-1 max-w-4xl mx-auto border rounded shadow bg-white overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {messages.map((msg, index) => (
+              <div key={index} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${msg.type === "user" ? "bg-green-100 text-right" : "bg-gray-100 text-left"}`}>
+                  <div className="text-[10px] text-gray-400 mb-1">
+                    {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
+                  </div>
+                  {msg.imageUrl && (
+                    <img src={msg.imageUrl} alt="uploaded" className="mb-2 max-w-xs rounded" />
+                  )}
+                  <p>{msg.type === "user" ? msg.prompt : msg.response}</p>
                 </div>
-                {msg.imageUrl && (
-                  <img src={msg.imageUrl} alt="uploaded" className="mb-2 max-w-xs rounded" />
-                )}
-                <p>{msg.type === "user" ? msg.prompt : msg.response}</p>
               </div>
-            </div>
-          ))}
-          {loading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 px-4 py-2 rounded-xl shadow-sm text-sm text-gray-500 animate-pulse">
-                כותב תשובה...
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 px-4 py-2 rounded-xl shadow-sm text-sm text-gray-500 animate-pulse">
+                  כותב תשובה...
+                </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        <div className="border-t p-4 space-y-2 bg-white sticky bottom-0">
-          <div className="flex flex-col sm:flex-row sm:items-end gap-2">
-            <Input
-              type="file"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="sm:w-[36px] w-full p-0 border-none text-xs file:mr-0"
-              title="צרף קובץ"
-            />
-            <Textarea
-              rows={1}
-              placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              className="min-h-[42px] resize-none flex-grow"
-            />
-            <Button onClick={handleSubmit} disabled={loading} className="min-w-[72px]">
-              {loading ? "⏳" : "שלח"}
-            </Button>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-          <div className="flex justify-between">
-            {error && <p className="text-red-600 text-sm">❌ {error}</p>}
-            <Button className="text-xs text-gray-500 bg-transparent hover:bg-gray-100" onClick={handleReset}>
-              נקה שיחה 🗑️
-            </Button>
+
+          <div className="border-t p-4 w-full bg-white">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-2">
+              <Textarea
+                rows={1}
+                placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                className="min-h-[42px] resize-none flex-grow"
+              />
+              <div className="flex gap-2">
+                <Input
+                  type="file"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  className="file:mr-2 text-xs"
+                />
+                <Button onClick={handleSubmit} disabled={loading}>
+                  {loading ? "⏳" : "שלח"}
+                </Button>
+              </div>
+            </div>
+            {error && <p className="text-red-600 text-sm mt-1">❌ {error}</p>}
+            <div className="flex justify-end mt-2">
+              <Button className="text-xs text-gray-500 bg-transparent hover:bg-gray-100" onClick={handleReset}>
+                נקה שיחה 🗑️
+              </Button>
+            </div>
           </div>
         </div>
       </div>
