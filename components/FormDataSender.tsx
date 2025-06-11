@@ -42,8 +42,6 @@ export default function FormDataSender() {
   const [imageUrl, setImageUrl] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   const [chats, setChats] = useState<ChatThread[]>(() => {
     if (typeof window !== "undefined") {
       const allKeys = Object.keys(localStorage);
@@ -179,9 +177,6 @@ export default function FormDataSender() {
       setPrompt("");
       setFile(null);
       setImageUrl("");
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
     } catch (e: any) {
       setError(e.message || "אירעה שגיאה בשליחה");
     } finally {
@@ -242,7 +237,7 @@ export default function FormDataSender() {
   };
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-screen flex-col sm:flex-row">
       <ChatSidebar
         chats={chats}
         currentChatId={currentChatId}
@@ -276,13 +271,12 @@ export default function FormDataSender() {
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="border-t p-4 space-y-2">
-          <div className="grid grid-cols-[auto_1fr_auto] gap-2 items-end w-full">
+        <div className="border-t p-4 space-y-2 bg-white sticky bottom-0">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-2">
             <Input
               type="file"
-              ref={fileInputRef}
               onChange={(e) => setFile(e.target.files?.[0] || null)}
-              className="w-[36px] p-0 m-0 border-none text-xs file:mr-0"
+              className="sm:w-[36px] w-full p-0 border-none text-xs file:mr-0"
               title="צרף קובץ"
             />
             <Textarea
@@ -290,7 +284,7 @@ export default function FormDataSender() {
               placeholder="כתוב כאן שאלה או תיאור משפטי + אפשר לצרף קובץ"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="min-h-[42px] resize-none"
+              className="min-h-[42px] resize-none flex-grow"
             />
             <Button onClick={handleSubmit} disabled={loading} className="min-w-[72px]">
               {loading ? "⏳" : "שלח"}
