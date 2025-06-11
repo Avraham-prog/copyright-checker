@@ -126,6 +126,7 @@ export default function FormDataSender() {
       if (isValidImageUrl(finalImageUrl)) {
         formData.append("image", finalImageUrl);
       }
+      formData.append("sessionId", currentChatId);
       formData.append(
         "history",
         JSON.stringify(
