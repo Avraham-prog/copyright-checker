@@ -4,7 +4,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import ChatSidebar from "@/components/ChatSidebar";
 import axios from "axios";
 
 interface Message {
@@ -185,5 +184,43 @@ export default function FormDataSender() {
     }
   };
 
-  // ... (הקוד הלא-משתנה נשאר כמו קודם)
+  return (
+    <div className="flex flex-col gap-4 max-w-2xl mx-auto px-2 pb-12">
+      <Textarea
+        value={prompt}
+        onChange={(e) => setPrompt(e.target.value)}
+        placeholder="כתוב את השאלה או התיאור שלך..."
+      />
+
+      <Input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setFile(e.target.files?.[0] || null)}
+      />
+
+      <Button onClick={handleSubmit} disabled={loading}>
+        {loading ? "שולח..." : "שלח לבדיקה"}
+      </Button>
+
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      <div className="mt-6 space-y-4">
+        {messages.map((msg, idx) => (
+          <div
+            key={idx}
+            className={`rounded p-3 shadow bg-white ${
+              msg.type === "user" ? "text-right bg-blue-50" : "text-left bg-gray-50"
+            }`}
+          >
+            {msg.prompt && <p>{msg.prompt}</p>}
+            {msg.imageUrl && (
+              <img src={msg.imageUrl} alt="תמונה" className="mt-2 max-w-xs mx-auto" />
+            )}
+            {msg.response && <p className="mt-2 text-gray-700">{msg.response}</p>}
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+    </div>
+  );
 }
