@@ -277,13 +277,13 @@ export default function FormDataSender() {
                 onChange={(e) => setPrompt(e.target.value)}
                 className="min-h-[42px] resize-none flex-grow"
               />
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Input
                   type="file"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                   className="file:mr-2 text-xs"
                 />
-                <Button onClick={handleSubmit} disabled={loading}>
+                <Button onClick={handleSubmit} disabled={loading} className="min-w-[72px]">
                   {loading ? "⏳" : "שלח"}
                 </Button>
               </div>
