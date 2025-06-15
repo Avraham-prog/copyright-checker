@@ -1,3 +1,4 @@
+// components/FormDataSender.tsx
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -7,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import ChatSidebar from "@/components/ChatSidebar";
 import axios from "axios";
 import { Menu } from "lucide-react";
-import * as Dialog from "@radix-ui/react-dialog";
 
 interface Message {
   type: "user" | "bot";
@@ -45,7 +45,6 @@ export default function FormDataSender() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const [chats, setChats] = useState<ChatThread[]>(() => {
     if (typeof window !== "undefined") {
       const allKeys = Object.keys(localStorage);
@@ -57,8 +56,7 @@ export default function FormDataSender() {
       );
       return chatKeys.map((key) => {
         const id = key.replace("chat_", "");
-        const name =
-          localStorage.getItem(`chat_${id}_name`) || `שיחה ללא שם`;
+        const name = localStorage.getItem(`chat_${id}_name`) || `שיחה ללא שם`;
         return { id, name };
       });
     }
@@ -94,9 +92,7 @@ export default function FormDataSender() {
   }, [messages]);
 
   const isValidImageUrl = (url?: string) => {
-    return (
-      !!url && url.startsWith("https") && /\.(jpg|jpeg|png|gif|webp)$/i.test(url)
-    );
+    return !!url && url.startsWith("https") && /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
   };
 
   const handleSubmit = async () => {
@@ -129,9 +125,7 @@ export default function FormDataSender() {
       const newUserMessage: Message = {
         type: "user",
         prompt,
-        imageUrl: isValidImageUrl(finalImageUrl)
-          ? finalImageUrl
-          : undefined,
+        imageUrl: isValidImageUrl(finalImageUrl) ? finalImageUrl : undefined,
         timestamp,
       };
 
@@ -153,9 +147,7 @@ export default function FormDataSender() {
               return {
                 type: "user",
                 prompt: msg.prompt,
-                imageUrl: isValidImageUrl(msg.imageUrl)
-                  ? msg.imageUrl
-                  : undefined,
+                imageUrl: isValidImageUrl(msg.imageUrl) ? msg.imageUrl : undefined,
               };
             } else {
               return {
@@ -256,10 +248,7 @@ export default function FormDataSender() {
   return (
     <div className="flex h-screen flex-col">
       <div className="sm:hidden p-2">
-        <Button
-          variant="outline"
-          onClick={() => setSidebarOpen((prev) => !prev)}
-        >
+        <Button variant="outline" onClick={() => setSidebarOpen((prev) => !prev)}>
           <Menu className="w-5 h-5" />
         </Button>
       </div>
@@ -285,9 +274,7 @@ export default function FormDataSender() {
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`flex ${
-                  msg.type === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
                   className={`max-w-[70%] px-4 py-2 rounded-xl shadow-sm whitespace-pre-wrap text-sm ${
@@ -297,9 +284,7 @@ export default function FormDataSender() {
                   }`}
                 >
                   <div className="text-[10px] text-gray-400 mb-1">
-                    {msg.type === "user"
-                      ? "אתה"
-                      : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
+                    {msg.type === "user" ? "אתה" : "עורך הדין הווירטואלי"} • {formatTime(msg.timestamp)}
                   </div>
                   {msg.imageUrl && (
                     <img
